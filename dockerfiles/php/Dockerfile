@@ -15,5 +15,8 @@ RUN echo "ErrorLog /var/log/apache2/error.log" >> /etc/apache2/apache2.conf
 RUN echo "LogLevel error" >> /etc/apache2/apache2.conf
 RUN echo "CustomLog /dev/null combined" >> /etc/apache2/apache2.conf
 
+# Copy application source
+COPY php/public /var/www/html
+
 # Start Apache
 CMD ["apache2-foreground"]

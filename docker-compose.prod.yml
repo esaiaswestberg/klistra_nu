@@ -8,13 +8,9 @@ networks:
 
 services:
   web:
-    build:
-      context: .
-      dockerfile: dockerfiles/php/Dockerfile
+    image: ghcr.io/esaiaswestberg/klistra_nu:latest
     ports:
       - "${WEB_PORT}:80"
-    volumes:
-      - ./php/public:/var/www/html
     environment:
       REDIS_REQUIREPASS: ${REDIS_REQUIREPASS}
       REDIS_IP: ${REDIS_IP}
@@ -26,7 +22,6 @@ services:
         ipv4_address: ${WEB_IP}
     restart: always
     command: ["apache2-foreground"]
-    
 
   redis:
     image: redis:7.4
