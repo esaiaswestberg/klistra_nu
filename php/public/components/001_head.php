@@ -11,8 +11,8 @@ session_start(); ?>
 } ?>
 
 <div class="head_container_master" id="head_container_master">
-    <a href="<?php echo getRootUrl(); ?>">
-        <h1>Klistra.nu</h1>
-        <h3>Copy & Paste - without a trace</h3>
-    </a>
+<a href="/">
+    <img src="/static/favicon.png" alt="Logo">
+    <h1>Low-Stack Klistra</h1>
+</a>
 </div>

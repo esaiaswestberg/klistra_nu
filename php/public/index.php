@@ -18,12 +18,12 @@ include_once "./include/guid.php";
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
     <meta name="description"
-        content="Klistra.nu is a secure and encrypted online platform that allows you to share password protected text with peace of mind. Keep your sensitive information safe and secure with Klistra.">
+        content="Low-Stack Klistra is a secure and encrypted online platform that allows you to share password protected text with peace of mind. Keep your sensitive information safe and secure with Klistra.">
     <meta name="keywords"
-        content="Klistra.nu, secure, encrypted, online platform, share text pastes, passwords, automatic expiry, sensitive information, safe, secure">
+        content="Low-Stack Klistra, secure, encrypted, online platform, share text pastes, passwords, automatic expiry, sensitive information, safe, secure">
 
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Klistra.nu</title>
+    <title>Low-Stack Klistra</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
