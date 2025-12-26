@@ -67,10 +67,18 @@ export interface components {
             passProtect: boolean;
             pass?: string;
             pasteText: string;
+            files?: components["schemas"]["File"][];
+        };
+        File: {
+            name: string;
+            /** Format: int64 */
+            size: number;
+            url: string;
         };
         Paste: {
             id?: string;
             text?: string | null;
+            files?: components["schemas"]["File"][] | null;
             protected?: boolean;
             /** Format: int64 */
             timeoutUnix?: number;

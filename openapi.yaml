@@ -92,6 +92,25 @@ components:
           type: string
         pasteText:
           type: string
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/File'
+
+    File:
+      type: object
+      required:
+        - name
+        - size
+        - url
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+          format: int64
+        url:
+          type: string
 
     Paste:
       type: object
@@ -100,6 +119,11 @@ components:
           type: string
         text:
           type: string
+          nullable: true
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/File'
           nullable: true
         protected:
           type: boolean

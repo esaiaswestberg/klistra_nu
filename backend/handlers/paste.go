@@ -50,10 +50,25 @@ func (s *Server) CreatePaste(c *gin.Context) {
 		return
 	}
 
+	var encryptedFiles string
+	if req.Files != nil && len(*req.Files) > 0 {
+		filesJSON, err := json.Marshal(req.Files)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process files"})
+			return
+		}
+		encryptedFiles, err = services.Encrypt(string(filesJSON), key)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "File encryption failed"})
+			return
+		}
+	}
+
 	timeoutUnix := time.Now().Add(time.Duration(req.Expiry) * time.Second).Unix()
 	paste := models.Paste{
 		ID:          id,
 		Text:        encryptedText,
+		Files:       encryptedFiles,
 		Protected:   req.PassProtect,
 		TimeoutUnix: timeoutUnix,
 		Salt:        saltBase64,
@@ -85,6 +100,7 @@ func (s *Server) CreatePaste(c *gin.Context) {
 		Protected:   &req.PassProtect,
 		TimeoutUnix: &timeoutUnix,
 		Text:        &req.PasteText, // Return clear text to confirm creation? Or null?
+		Files:       req.Files,
 	}
 	// Actually, safer to not return text if we just encrypted it, 
 	// but standard REST API returns the created resource.
@@ -116,6 +132,7 @@ func (s *Server) GetPaste(c *gin.Context, id string, params api.GetPasteParams) 
 			Protected:   &paste.Protected,
 			TimeoutUnix: &paste.TimeoutUnix,
 			Text:        nil, // Locked
+			Files:       nil,
 		})
 		return
 	}
@@ -138,11 +155,20 @@ func (s *Server) GetPaste(c *gin.Context, id string, params api.GetPasteParams) 
 		return
 	}
 
+	var files []api.File
+	if paste.Files != "" {
+		decryptedFilesJSON, err := services.Decrypt(paste.Files, key)
+		if err == nil {
+			_ = json.Unmarshal([]byte(decryptedFilesJSON), &files)
+		}
+	}
+
 	// Success
 	c.JSON(http.StatusOK, api.Paste{
 		Id:          &paste.ID,
 		Protected:   &paste.Protected,
 		TimeoutUnix: &paste.TimeoutUnix,
 		Text:        &decryptedText,
+		Files:       &files,
 	})
 }
