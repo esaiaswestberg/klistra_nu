@@ -4,7 +4,11 @@
 package api
 
 import (
+	"fmt"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"github.com/oapi-codegen/runtime"
 )
 
 // CreatePasteRequest defines model for CreatePasteRequest.
@@ -15,48 +19,34 @@ type CreatePasteRequest struct {
 	PasteText   string  `json:"pasteText"`
 }
 
-// GetPasteRequest defines model for GetPasteRequest.
-type GetPasteRequest struct {
-	Id   string  `json:"id"`
-	Pass *string `json:"pass,omitempty"`
-}
-
 // Paste defines model for Paste.
 type Paste struct {
 	Id          *string `json:"id,omitempty"`
 	Protected   *bool   `json:"protected,omitempty"`
-	Text        *string `json:"text,omitempty"`
+	Text        *string `json:"text"`
 	TimeoutUnix *int64  `json:"timeoutUnix,omitempty"`
 }
 
-// GetPasteStatusJSONBody defines parameters for GetPasteStatus.
-type GetPasteStatusJSONBody struct {
-	Id string `json:"id"`
+// GetPasteParams defines parameters for GetPaste.
+type GetPasteParams struct {
+	// XPastePassword Password for protected pastes
+	XPastePassword *string `json:"X-Paste-Password,omitempty"`
 }
-
-// GetPasteJSONRequestBody defines body for GetPaste for application/json ContentType.
-type GetPasteJSONRequestBody = GetPasteRequest
-
-// GetPasteStatusJSONRequestBody defines body for GetPasteStatus for application/json ContentType.
-type GetPasteStatusJSONRequestBody GetPasteStatusJSONBody
 
 // CreatePasteJSONRequestBody defines body for CreatePaste for application/json ContentType.
 type CreatePasteJSONRequestBody = CreatePasteRequest
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// Read a paste
-	// (POST /read)
-	GetPaste(c *gin.Context)
-	// Get last created paste ID from session
-	// (GET /session)
-	GetSession(c *gin.Context)
-	// Get paste status (check if protected)
-	// (POST /status)
-	GetPasteStatus(c *gin.Context)
 	// Create a new paste
-	// (POST /submit)
+	// (POST /pastes)
 	CreatePaste(c *gin.Context)
+	// Get a paste
+	// (GET /pastes/{id})
+	GetPaste(c *gin.Context, id string, params GetPasteParams)
+	// Get last created paste ID from session
+	// (GET /session/last-paste)
+	GetLastPasteSession(c *gin.Context)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -67,45 +57,6 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(c *gin.Context)
-
-// GetPaste operation middleware
-func (siw *ServerInterfaceWrapper) GetPaste(c *gin.Context) {
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetPaste(c)
-}
-
-// GetSession operation middleware
-func (siw *ServerInterfaceWrapper) GetSession(c *gin.Context) {
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetSession(c)
-}
-
-// GetPasteStatus operation middleware
-func (siw *ServerInterfaceWrapper) GetPasteStatus(c *gin.Context) {
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		middleware(c)
-		if c.IsAborted() {
-			return
-		}
-	}
-
-	siw.Handler.GetPasteStatus(c)
-}
 
 // CreatePaste operation middleware
 func (siw *ServerInterfaceWrapper) CreatePaste(c *gin.Context) {
@@ -118,6 +69,67 @@ func (siw *ServerInterfaceWrapper) CreatePaste(c *gin.Context) {
 	}
 
 	siw.Handler.CreatePaste(c)
+}
+
+// GetPaste operation middleware
+func (siw *ServerInterfaceWrapper) GetPaste(c *gin.Context) {
+
+	var err error
+
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameter("simple", false, "id", c.Param("id"), &id)
+	if err != nil {
+		siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter id: %w", err), http.StatusBadRequest)
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params GetPasteParams
+
+	headers := c.Request.Header
+
+	// ------------- Optional header parameter "X-Paste-Password" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("X-Paste-Password")]; found {
+		var XPastePassword string
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandler(c, fmt.Errorf("Expected one value for X-Paste-Password, got %d", n), http.StatusBadRequest)
+			return
+		}
+
+		err = runtime.BindStyledParameterWithLocation("simple", false, "X-Paste-Password", runtime.ParamLocationHeader, valueList[0], &XPastePassword)
+		if err != nil {
+			siw.ErrorHandler(c, fmt.Errorf("Invalid format for parameter X-Paste-Password: %w", err), http.StatusBadRequest)
+			return
+		}
+
+		params.XPastePassword = &XPastePassword
+
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetPaste(c, id, params)
+}
+
+// GetLastPasteSession operation middleware
+func (siw *ServerInterfaceWrapper) GetLastPasteSession(c *gin.Context) {
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		middleware(c)
+		if c.IsAborted() {
+			return
+		}
+	}
+
+	siw.Handler.GetLastPasteSession(c)
 }
 
 // GinServerOptions provides options for the Gin server.
@@ -147,8 +159,7 @@ func RegisterHandlersWithOptions(router gin.IRouter, si ServerInterface, options
 		ErrorHandler:       errorHandler,
 	}
 
-	router.POST(options.BaseURL+"/read", wrapper.GetPaste)
-	router.GET(options.BaseURL+"/session", wrapper.GetSession)
-	router.POST(options.BaseURL+"/status", wrapper.GetPasteStatus)
-	router.POST(options.BaseURL+"/submit", wrapper.CreatePaste)
+	router.POST(options.BaseURL+"/pastes", wrapper.CreatePaste)
+	router.GET(options.BaseURL+"/pastes/:id", wrapper.GetPaste)
+	router.GET(options.BaseURL+"/session/last-paste", wrapper.GetLastPasteSession)
 }

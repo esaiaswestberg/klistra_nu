@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Copy, Clock, Lock, AlertTriangle, FileText, Unlock } from 'lucide-react';
-import { apiPost, type Paste } from '../api';
+import { getPaste, type Paste } from '../api';
 import { useToast } from './ui/use-toast';
 
 export default function ViewPaste({ id }: { id: string }) {
@@ -13,7 +13,7 @@ export default function ViewPaste({ id }: { id: string }) {
   const { toast } = useToast();
 
   useEffect(() => {
-    checkStatus();
+    fetchPaste();
   }, [id]);
 
   useEffect(() => {
@@ -47,26 +47,6 @@ export default function ViewPaste({ id }: { id: string }) {
       return res.trim();
   };
 
-  const checkStatus = async () => {
-    try {
-      const status = await apiPost<{id: string, protected: boolean}>('status', { id });
-      if (status && status.id) {
-         if (status.protected) {
-            setIsProtected(true);
-            setLoading(false);
-         } else {
-            fetchPaste();
-         }
-      } else {
-         setError('Paste not found or expired.');
-         setLoading(false);
-      }
-    } catch (e) {
-      setError('Paste not found or expired.');
-      setLoading(false);
-    }
-  };
-
   const handleUnlock = async (e: React.FormEvent) => {
      e.preventDefault();
      if (!password) {
@@ -79,26 +59,30 @@ export default function ViewPaste({ id }: { id: string }) {
   const fetchPaste = async (pass: string = '') => {
      setLoading(true);
      try {
-        const data = await apiPost<Paste>('read', { id, pass });
-        if (data && data.text) {
+        const data = await getPaste(id, pass);
+        // If protected and no text, it means we got metadata (locked)
+        if (data.protected && !data.text) {
+           setPaste(data);
+           setIsProtected(true);
+        } else {
+           // Unlocked or unprotected
            setPaste(data);
            setIsProtected(false);
-        } else {
-             // Should not happen if API returns 401/error, which throws
+        }
+     } catch (e: any) {
+        console.error(e);
+        if (e.message === "Unauthorized") {
              toast({
                 title: "Error",
-                description: "Incorrect password or failed to decrypt.",
+                description: "Incorrect password.",
                 variant: "destructive"
              });
+             // Keep protected state if we were already protected
+        } else if (e.message === "NotFound") {
+             setError('Paste not found or expired.');
+        } else {
+             setError('Failed to load paste.');
         }
-     } catch (e) {
-        console.error(e);
-        toast({
-           title: "Error",
-           description: "Incorrect password.", // Usually 401
-           variant: "destructive"
-        });
-        setLoading(false); // Stop loading to let user try again if protected
      } finally {
         setLoading(false);
      }
@@ -114,7 +98,7 @@ export default function ViewPaste({ id }: { id: string }) {
      }
   };
 
-  if (loading && !isProtected) {
+  if (loading && !paste) { // Show loading only if we have NO data yet
      return <div className="text-center p-10"><div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></div>;
   }
 
@@ -129,7 +113,7 @@ export default function ViewPaste({ id }: { id: string }) {
      );
   }
 
-  if (isProtected && !paste) {
+  if (isProtected && !paste?.text) {
      return (
         <div className="bg-surface/80 backdrop-blur-md rounded-xl p-8 border border-border-color shadow-xl max-w-md mx-auto">
            <div className="flex flex-col items-center gap-6 text-center">

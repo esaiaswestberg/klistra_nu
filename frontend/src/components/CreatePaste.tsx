@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Lock, Clock, Send } from 'lucide-react';
-import { apiPost, type CreatePasteRequest } from '../api';
+import { createPaste, type CreatePasteRequest } from '../api';
 import { useToast } from './ui/use-toast';
 
 export default function CreatePaste() {
@@ -30,9 +30,9 @@ export default function CreatePaste() {
         pass: password
       };
 
-      const id = await apiPost('submit', req);
-      if (id && typeof id === 'string') {
-        window.location.href = `/${id}`;
+      const resp = await createPaste(req);
+      if (resp && resp.id) {
+        window.location.href = `/${resp.id}`;
       } else {
          throw new Error("Invalid response");
       }

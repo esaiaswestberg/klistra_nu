@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/submit": {
+    "/pastes": {
         parameters: {
             query?: never;
             header?: never;
@@ -21,41 +21,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/read": {
+    "/pastes/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get a paste
+         * @description Retrieve a paste. If protected, provide password in X-Paste-Password header. If no password provided for protected paste, returns metadata only.
+         */
+        get: operations["getPaste"];
         put?: never;
-        /** Read a paste */
-        post: operations["getPaste"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Get paste status (check if protected) */
-        post: operations["getPasteStatus"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/session": {
+    "/session/last-paste": {
         parameters: {
             query?: never;
             header?: never;
@@ -63,7 +49,7 @@ export interface paths {
             cookie?: never;
         };
         /** Get last created paste ID from session */
-        get: operations["getSession"];
+        get: operations["getLastPasteSession"];
         put?: never;
         post?: never;
         delete?: never;
@@ -82,13 +68,9 @@ export interface components {
             pass?: string;
             pasteText: string;
         };
-        GetPasteRequest: {
-            id: string;
-            pass?: string;
-        };
         Paste: {
             id?: string;
-            text?: string;
+            text?: string | null;
             protected?: boolean;
             /** Format: int64 */
             timeoutUnix?: number;
@@ -121,7 +103,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "text/plain": string;
+                    "application/json": components["schemas"]["Paste"];
                 };
             };
             /** @description Invalid input */
@@ -143,17 +125,19 @@ export interface operations {
     getPaste: {
         parameters: {
             query?: never;
-            header?: never;
-            path?: never;
+            header?: {
+                /** @description Password for protected pastes */
+                "X-Paste-Password"?: string;
+            };
+            path: {
+                /** @description Paste ID */
+                id: string;
+            };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetPasteRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description Paste content */
+            /** @description Paste content (or metadata if protected and locked) */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -162,7 +146,7 @@ export interface operations {
                     "application/json": components["schemas"]["Paste"];
                 };
             };
-            /** @description Unauthorized (Password required or incorrect) */
+            /** @description Incorrect password */
             401: {
                 headers: {
                     [name: string]: unknown;
@@ -178,43 +162,7 @@ export interface operations {
             };
         };
     };
-    getPasteStatus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    id: string;
-                };
-            };
-        };
-        responses: {
-            /** @description Paste status */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        id?: string;
-                        protected?: boolean;
-                    };
-                };
-            };
-            /** @description Paste not found */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    getSession: {
+    getLastPasteSession: {
         parameters: {
             query?: never;
             header?: never;
@@ -229,7 +177,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "text/plain": string;
+                    "application/json": {
+                        id?: string;
+                    };
                 };
             };
         };

@@ -7,14 +7,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (s *Server) GetSession(c *gin.Context) {
+func (s *Server) GetLastPasteSession(c *gin.Context) {
 	// Returns the paste ID from session if any
 	session := sessions.Default(c)
 	pasteID := session.Get("createdPaste")
+	
 	if pasteID != nil {
-		c.String(http.StatusOK, pasteID.(string))
+		id := pasteID.(string)
+		c.JSON(http.StatusOK, gin.H{"id": id})
 	} else {
-		// Return empty or 404? PHP returned string (empty or id)
-		c.String(http.StatusOK, "")
+		// Return 200 with empty ID or just empty object?
+		// Spec says { id: string }.
+		c.JSON(http.StatusOK, gin.H{"id": ""})
 	}
 }

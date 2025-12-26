@@ -1,12 +1,12 @@
 openapi: 3.0.3
 info:
   title: Klistra.nu API
-  version: 1.0.0
-  description: Secure pastebin API
+  version: 2.0.0
+  description: Secure pastebin API (RESTful)
 servers:
   - url: /api
 paths:
-  /submit:
+  /pastes:
     post:
       summary: Create a new paste
       operationId: createPaste
@@ -20,55 +20,51 @@ paths:
         '201':
           description: Paste created successfully
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
-                example: "ape12"
+                $ref: '#/components/schemas/Paste'
         '400':
           description: Invalid input
         '500':
           description: Server error
 
-  /read:
-    post:
-      summary: Read a paste
+  /pastes/{id}:
+    get:
+      summary: Get a paste
+      description: Retrieve a paste. If protected, provide password in X-Paste-Password header. If no password provided for protected paste, returns metadata only.
       operationId: getPaste
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GetPasteRequest'
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Paste ID
+        - in: header
+          name: X-Paste-Password
+          schema:
+            type: string
+          required: false
+          description: Password for protected pastes
       responses:
         '200':
-          description: Paste content
+          description: Paste content (or metadata if protected and locked)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Paste'
+        '401':
+          description: Incorrect password
         '404':
           description: Paste not found
-        '401':
-          description: Unauthorized (Password required or incorrect)
 
-  /status:
-    post:
-      summary: Get paste status (check if protected)
-      operationId: getPasteStatus
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                id:
-                  type: string
-              required:
-                - id
+  /session/last-paste:
+    get:
+      summary: Get last created paste ID from session
+      operationId: getLastPasteSession
       responses:
         '200':
-          description: Paste status
+          description: Last created paste ID
           content:
             application/json:
               schema:
@@ -76,22 +72,6 @@ paths:
                 properties:
                   id:
                     type: string
-                  protected:
-                    type: boolean
-        '404':
-          description: Paste not found
-
-  /session:
-    get:
-      summary: Get last created paste ID from session
-      operationId: getSession
-      responses:
-        '200':
-          description: Last created paste ID
-          content:
-            text/plain:
-              schema:
-                type: string
 
 components:
   schemas:
@@ -113,17 +93,6 @@ components:
         pasteText:
           type: string
 
-    GetPasteRequest:
-      type: object
-      required:
-        - id
-      properties:
-        id:
-          type: string
-          minLength: 4
-        pass:
-          type: string
-
     Paste:
       type: object
       properties:
@@ -131,6 +100,7 @@ components:
           type: string
         text:
           type: string
+          nullable: true
         protected:
           type: boolean
         timeoutUnix:

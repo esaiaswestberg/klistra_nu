@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -73,17 +72,29 @@ func (s *Server) CreatePaste(c *gin.Context) {
 	session.Set("createdPaste", id)
 	session.Save()
 
-	c.String(http.StatusCreated, id)
+	// Return created paste object (as per new API spec)
+	// We return the ID in the object, but text? 
+	// Spec says returns Paste object. 
+	// Should we return the clear text or null?
+	// Usually POST returns the resource.
+	// Let's return the metadata + ID. Text is optional/nullable.
+	// Let's return what we have (we have clear text in req.PasteText).
+	
+	resp := api.Paste{
+		Id:          &id,
+		Protected:   &req.PassProtect,
+		TimeoutUnix: &timeoutUnix,
+		Text:        &req.PasteText, // Return clear text to confirm creation? Or null?
+	}
+	// Actually, safer to not return text if we just encrypted it, 
+	// but standard REST API returns the created resource.
+	// The user just sent it, so they know it.
+	
+	c.JSON(http.StatusCreated, resp)
 }
 
-func (s *Server) GetPaste(c *gin.Context) {
-	var req api.GetPasteRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	
-	data, err := services.Get(req.Id)
+func (s *Server) GetPaste(c *gin.Context, id string, params api.GetPasteParams) {
+	data, err := services.Get(id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Paste not found"})
 		return
@@ -92,86 +103,46 @@ func (s *Server) GetPaste(c *gin.Context) {
 	var paste models.Paste
 	json.Unmarshal([]byte(data), &paste)
 
-	// Decrypt
-	salt, _ := base64.StdEncoding.DecodeString(paste.Salt)
-	
+	// Determine if we should attempt decryption
 	pass := ""
-	if req.Pass != nil {
-		pass = *req.Pass
+	if params.XPastePassword != nil {
+		pass = *params.XPastePassword
 	}
 
-	passwordToUse := pass
-	// If protected and no pass provided?
+	// If paste is protected and NO password provided -> Return Metadata (Locked)
 	if paste.Protected && pass == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Password required"})
+		c.JSON(http.StatusOK, api.Paste{
+			Id:          &paste.ID,
+			Protected:   &paste.Protected,
+			TimeoutUnix: &paste.TimeoutUnix,
+			Text:        nil, // Locked
+		})
 		return
 	}
+
+	// If paste is protected AND password provided -> Try Decrypt
+	// OR If paste is NOT protected -> Use ID as password
+	
+	salt, _ := base64.StdEncoding.DecodeString(paste.Salt)
+	passwordToUse := pass
+	
 	if !paste.Protected {
-		passwordToUse = req.Id
+		passwordToUse = id
 	}
 
 	key := services.DeriveKey(passwordToUse, salt)
 	decryptedText, err := services.Decrypt(paste.Text, key)
 	if err != nil {
-		fmt.Println("Decryption failed:", err)
+		// Decryption failed means password was wrong
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect password"})
 		return
 	}
 
-	response := api.Paste{
+	// Success
+	c.JSON(http.StatusOK, api.Paste{
 		Id:          &paste.ID,
-		TimeoutUnix: &paste.TimeoutUnix, // api.gen.go uses *int64? let's check
 		Protected:   &paste.Protected,
+		TimeoutUnix: &paste.TimeoutUnix,
 		Text:        &decryptedText,
-	}
-	// Need to verify api.Paste struct fields types from api.gen.go
-	// api.gen.go:
-	// type Paste struct {
-    //    Id          *string `json:"id,omitempty"`
-    //    Protected   *bool   `json:"protected,omitempty"`
-    //    Text        *string `json:"text,omitempty"`
-    //    TimeoutUnix *int64  `json:"timeoutUnix,omitempty"`
-    // }
-	// So pointers are correct.
-
-	c.JSON(http.StatusOK, response)
-}
-
-func (s *Server) GetPasteStatus(c *gin.Context) {
-	var req struct {
-		ID string `json:"id"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-    // Wait, generated code might expect specific body for Status?
-	// openapi.yaml:
-	// /status: post requestBody schema: { properties: { id: string } }
-	// generated: type GetPasteStatusJSONBody struct { Id *string `json:"id,omitempty"` }
-	// But RegisterHandlersWithOptions calls wrapper.GetPasteStatus.
-	// wrapper calls s.GetPasteStatus(c).
-	// So I handle binding.
-	
-	// Let's use a struct matching the schema manually or define it.
-	// OAPI Codegen doesn't generate named struct for inline schema requestBody unless configured?
-	// It likely generated GetPasteStatusJSONBody.
-	
-	// Let's check api.gen.go for GetPasteStatusJSONBody.
-	
-	// Assuming simple bind works.
-	
-	data, err := services.Get(req.ID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Paste not found"})
-		return
-	}
-
-	var paste models.Paste
-	json.Unmarshal([]byte(data), &paste)
-
-	c.JSON(http.StatusOK, gin.H{
-		"id":        paste.ID,
-		"protected": paste.Protected,
 	})
 }
