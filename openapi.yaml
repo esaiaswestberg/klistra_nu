@@ -111,6 +111,8 @@ components:
           format: int64
         url:
           type: string
+        key:
+          type: string
 
     Paste:
       type: object

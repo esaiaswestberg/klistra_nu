@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Copy, Clock, Lock, AlertTriangle, FileText, Unlock, Download, Paperclip } from 'lucide-react';
 import { getPaste, type Paste } from '../api';
 import { useToast } from './ui/use-toast';
+import { decryptFile } from '../lib/crypto';
 
 export default function ViewPaste({ id }: { id: string }) {
   const [paste, setPaste] = useState<Paste | null>(null);
@@ -10,6 +11,7 @@ export default function ViewPaste({ id }: { id: string }) {
   const [isProtected, setIsProtected] = useState(false);
   const [password, setPassword] = useState('');
   const [timeLeft, setTimeLeft] = useState('');
+  const [downloading, setDownloading] = useState<Record<number, boolean>>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -108,6 +110,40 @@ export default function ViewPaste({ id }: { id: string }) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
+  const handleDownload = async (file: any, index: number) => {
+    if (downloading[index]) return;
+    
+    setDownloading(prev => ({ ...prev, [index]: true }));
+    try {
+      const response = await fetch(file.url);
+      if (!response.ok) throw new Error("Download failed");
+      const blob = await response.blob();
+      
+      let finalBlob = blob;
+      if (file.key) {
+        finalBlob = await decryptFile(blob, file.key);
+      }
+      
+      const url = URL.createObjectURL(finalBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = file.name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        title: "Download Error",
+        description: err.message || "Failed to download or decrypt file.",
+        variant: "destructive"
+      });
+    } finally {
+      setDownloading(prev => ({ ...prev, [index]: false }));
+    }
+  };
+
   if (loading && !paste) { // Show loading only if we have NO data yet
      return <div className="text-center p-10"><div className="animate-spin h-10 w-10 border-4 border-primary border-t-transparent rounded-full mx-auto"></div></div>;
   }
@@ -194,24 +230,29 @@ export default function ViewPaste({ id }: { id: string }) {
            </h3>
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
              {paste.files.map((file, idx) => (
-               <a 
+               <button 
                  key={idx} 
-                 href={file.url} 
-                 target="_blank" 
-                 rel="noopener noreferrer"
-                 className="flex items-center justify-between bg-surface-variant/30 hover:bg-surface-variant/50 p-3 rounded-lg border border-border-color transition-all group"
+                 onClick={() => handleDownload(file, idx)}
+                 disabled={downloading[idx]}
+                 className="flex items-center justify-between bg-surface-variant/30 hover:bg-surface-variant/50 p-3 rounded-lg border border-border-color transition-all group w-full disabled:opacity-50"
                >
                  <div className="flex items-center gap-3 truncate">
                    <div className="p-2 bg-primary/10 rounded group-hover:bg-primary/20 transition-colors">
-                     <Download size={16} className="text-primary" />
+                     {downloading[idx] ? (
+                       <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+                     ) : (
+                       <Download size={16} className="text-primary" />
+                     )}
                    </div>
-                   <div className="flex flex-col truncate">
+                   <div className="flex flex-col truncate text-left">
                      <span className="truncate text-sm font-medium">{file.name}</span>
                      <span className="text-[10px] text-subtle-gray">{formatFileSize(file.size)}</span>
                    </div>
                  </div>
-                 <span className="text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">Download</span>
-               </a>
+                 <span className="text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                   {file.key ? 'Decrypt & Save' : 'Download'}
+                 </span>
+               </button>
              ))}
            </div>
          </div>

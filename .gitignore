@@ -4,3 +4,7 @@ backend/klistra.db
 backend/tmp
 frontend/dist
 frontend/node_modules
+
+# Generated API code
+backend/api/api.gen.go
+frontend/src/api-types.ts

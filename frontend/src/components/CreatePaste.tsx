@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
-import { Lock, Clock, Send, Paperclip, X, File } from 'lucide-react';
+import { Lock, Clock, Send, Paperclip, X, File as FileIcon } from 'lucide-react';
 import { createPaste, type CreatePasteRequest } from '../api';
 import { useToast } from './ui/use-toast';
+import { encryptFile } from '../lib/crypto';
 
 export default function CreatePaste() {
   const [text, setText] = useState('');
@@ -36,11 +37,11 @@ export default function CreatePaste() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  const uploadFile = (file: File, onProgress: (percent: number) => void): Promise<string> => {
+  const uploadFile = (blob: Blob, filename: string, onProgress: (percent: number) => void): Promise<string> => {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', blob, filename);
       formData.append('expires', expiry.toString());
 
       xhr.upload.addEventListener('progress', (e) => {
@@ -55,12 +56,12 @@ export default function CreatePaste() {
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve(xhr.responseText);
           } else {
-            reject(new Error(`Failed to upload ${file.name}`));
+            reject(new Error(`Failed to upload ${filename}`));
           }
         }
       };
 
-      xhr.onerror = () => reject(new Error(`Network error during ${file.name} upload`));
+      xhr.onerror = () => reject(new Error(`Network error during ${filename} upload`));
       
       xhr.open('POST', 'https://temp.low-stack.tech/');
       xhr.setRequestHeader('Accept', '*/*');
@@ -82,16 +83,20 @@ export default function CreatePaste() {
     setLoading(true);
     setUploadProgress({});
     try {
-      let filesMetadata: { name: string, size: number, url: string }[] = [];
+      let filesMetadata: { name: string, size: number, url: string, key?: string }[] = [];
       if (selectedFiles.length > 0) {
         filesMetadata = await Promise.all(selectedFiles.map(async (file, index) => {
-          const url = await uploadFile(file, (percent) => {
+          // Encrypt file before upload
+          const { encryptedBlob, keyBase64 } = await encryptFile(file);
+
+          const url = await uploadFile(encryptedBlob, file.name, (percent) => {
             setUploadProgress(prev => ({ ...prev, [index]: percent }));
           });
           return {
             name: file.name,
             size: file.size,
-            url: url
+            url: url,
+            key: keyBase64
           };
         }));
       }
@@ -187,7 +192,7 @@ export default function CreatePaste() {
                     <div key={idx} className="flex flex-col bg-surface-variant/50 p-2 rounded border border-border-color/50 text-sm gap-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 truncate">
-                          <File size={14} className="text-primary flex-shrink-0" />
+                          <FileIcon size={14} className="text-primary flex-shrink-0" />
                           <span className="truncate text-on-surface">{file.name}</span>
                           <span className="text-[10px] text-subtle-gray">({formatFileSize(file.size)})</span>
                         </div>
