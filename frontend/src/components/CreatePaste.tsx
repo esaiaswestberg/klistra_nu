@@ -144,148 +144,168 @@ export default function CreatePaste() {
   };
 
   return (
-    <div className="bg-surface/80 backdrop-blur-md rounded-xl p-6 border border-border-color shadow-xl">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="relative">
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Paste your text here..."
-            className="w-full h-64 bg-input-bg border border-border-color rounded-lg p-4 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary transition-all resize-y font-mono"
-          />
-          <div className="absolute bottom-4 right-4 text-xs text-subtle-gray bg-surface/50 px-2 py-1 rounded">
-            {text.length} chars
-          </div>
-        </div>
+    <div className="relative group">
+      {/* Decorative Gradient Border */}
+      <div className="absolute -inset-[1px] bg-gradient-to-r from-primary/20 to-primary-variant/20 rounded-2xl blur-[1px] group-focus-within:from-primary/40 group-focus-within:to-primary-variant/40 transition-all duration-500"></div>
+      
+      <div className="relative bg-surface/80 backdrop-blur-xl rounded-2xl p-6 border border-white/5 shadow-2xl overflow-hidden">
+        {/* Subtle inner glow */}
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent"></div>
 
-        {/* File Upload Section */}
-        <div 
-          className={`border-2 border-dashed rounded-lg p-4 transition-colors ${
-            isDragging ? 'border-primary bg-primary/5' : 'border-border-color bg-input-bg/50'
-          }`}
-          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setIsDragging(false);
-            if (e.dataTransfer.files) {
-              const filesArray = Array.from(e.dataTransfer.files);
-              setSelectedFiles(prev => [...prev, ...filesArray]);
-            }
-          }}
-        >
-          <div className="flex flex-col items-center gap-2">
-            <input
-              type="file"
-              multiple
-              onChange={handleFileChange}
-              className="hidden"
-              ref={fileInputRef}
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <div className="relative group/textarea">
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Paste your text here..."
+              className="w-full h-80 bg-input-bg/50 border border-border-color/50 rounded-xl p-5 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-y font-mono backdrop-blur-sm"
             />
-            {selectedFiles.length === 0 ? (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 text-subtle-gray hover:text-primary transition-colors py-2"
-              >
-                <Paperclip size={18} />
-                <span>Click or drag files to upload</span>
-              </button>
-            ) : (
-              <div className="w-full space-y-2">
-                <div className="flex justify-between items-center text-xs font-bold text-subtle-gray mb-1 uppercase tracking-wider">
-                  <span>Attached Files ({selectedFiles.length})</span>
-                  <button 
-                    type="button" 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="text-primary hover:underline"
-                  >
-                    Add More
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {selectedFiles.map((file, idx) => (
-                    <div key={idx} className="flex flex-col bg-surface-variant/50 p-2 rounded border border-border-color/50 text-sm gap-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 truncate">
-                          <FileIcon size={14} className="text-primary flex-shrink-0" />
-                          <span className="truncate text-on-surface">{file.name}</span>
-                          <span className="text-[10px] text-subtle-gray">({formatFileSize(file.size)})</span>
-                        </div>
-                        <button 
-                          type="button" 
-                          onClick={() => removeFile(idx)}
-                          className="text-subtle-gray hover:text-error transition-colors"
-                          disabled={loading}
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                      {loading && uploadProgress[idx] !== undefined && (
-                        <div className="w-full bg-surface h-1.5 rounded-full overflow-hidden">
-                          <div 
-                            className="bg-primary h-full transition-all duration-300 ease-out" 
-                            style={{ width: `${uploadProgress[idx]}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap gap-4 items-center justify-between">
-          <div className="flex flex-wrap gap-4 items-center w-full md:w-auto">
-            {/* Expiry Select */}
-            <div className="relative group">
-               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-subtle-gray">
-                  <Clock size={16} />
-               </div>
-               <select 
-                  value={expiry} 
-                  onChange={(e) => setExpiry(Number(e.target.value))}
-                  className="pl-10 pr-4 py-2 bg-input-bg border border-border-color rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary w-full md:w-40 text-sm"
-               >
-                  <option value={60}>1 Minute</option>
-                  <option value={600}>10 Minutes</option>
-                  <option value={3600}>1 Hour</option>
-                  <option value={21600}>6 Hours</option>
-                  <option value={43200}>12 Hours</option>
-                  <option value={86400}>1 Day</option>
-                  <option value={172800}>2 Days</option>
-                  <option value={604800}>1 Week</option>
-                  <option value={1209600}>2 Weeks</option>
-                  <option value={2592000}>1 Month</option>
-               </select>
-            </div>
-
-            {/* Password Input */}
-            <div className="relative flex-1 md:flex-none">
-               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-subtle-gray">
-                  <Lock size={16} />
-               </div>
-               <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password (Optional)"
-                  className="pl-10 pr-4 py-2 bg-input-bg border border-border-color rounded-lg w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-               />
+            <div className="absolute bottom-4 right-4 text-[10px] font-bold tracking-widest uppercase text-subtle-gray bg-surface/80 backdrop-blur-md px-2 py-1 rounded-md border border-border-color/50">
+              {text.length} characters
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-variant text-white px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 w-full md:w-auto"
+          {/* File Upload Section */}
+          <div 
+            className={`relative border-2 border-dashed rounded-xl p-6 transition-all duration-300 ${
+              isDragging ? 'border-primary bg-primary/10 scale-[1.01]' : 'border-border-color/50 bg-input-bg/30 hover:border-primary/30 hover:bg-primary/5'
+            }`}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragging(false);
+              if (e.dataTransfer.files) {
+                const filesArray = Array.from(e.dataTransfer.files);
+                setSelectedFiles(prev => [...prev, ...filesArray]);
+              }
+            }}
           >
-            {loading ? 'Processing...' : <>Create Klister <Send size={18} /></>}
-          </button>
-        </div>
-      </form>
+            <div className="flex flex-col items-center gap-3">
+              <input
+                type="file"
+                multiple
+                onChange={handleFileChange}
+                className="hidden"
+                ref={fileInputRef}
+              />
+              {selectedFiles.length === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex flex-col items-center gap-2 text-subtle-gray hover:text-primary transition-all group/upload py-2"
+                >
+                  <div className="p-3 bg-surface-variant/50 rounded-full group-hover/upload:bg-primary/10 group-hover/upload:scale-110 transition-all">
+                    <Paperclip size={24} className="group-hover/upload:text-primary transition-colors" />
+                  </div>
+                  <span className="text-sm font-medium">Click or drag files to secure and share</span>
+                </button>
+              ) : (
+                <div className="w-full space-y-3">
+                  <div className="flex justify-between items-center text-[10px] font-black text-subtle-gray mb-1 uppercase tracking-widest">
+                    <span>Attached Files ({selectedFiles.length})</span>
+                    <button 
+                      type="button" 
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-primary hover:text-primary-variant transition-colors"
+                    >
+                      + Add More
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {selectedFiles.map((file, idx) => (
+                      <div key={idx} className="flex flex-col bg-surface-variant/30 p-3 rounded-lg border border-border-color/30 text-sm gap-2 backdrop-blur-md">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3 truncate">
+                            <div className="p-1.5 bg-primary/10 rounded">
+                              <FileIcon size={14} className="text-primary flex-shrink-0" />
+                            </div>
+                            <div className="flex flex-col truncate">
+                              <span className="truncate font-medium text-on-surface">{file.name}</span>
+                              <span className="text-[10px] text-subtle-gray">{formatFileSize(file.size)}</span>
+                            </div>
+                          </div>
+                          <button 
+                            type="button" 
+                            onClick={() => removeFile(idx)}
+                            className="p-1.5 rounded-md hover:bg-error/10 text-subtle-gray hover:text-error transition-all"
+                            disabled={loading}
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                        {loading && uploadProgress[idx] !== undefined && (
+                          <div className="w-full bg-surface h-1 rounded-full overflow-hidden">
+                            <div 
+                              className="bg-gradient-to-r from-primary to-primary-variant h-full transition-all duration-300 ease-out" 
+                              style={{ width: `${uploadProgress[idx]}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-4 items-center justify-between mt-2">
+            <div className="flex flex-wrap gap-3 items-center w-full md:w-auto">
+              {/* Expiry Select */}
+              <div className="relative group/select">
+                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-subtle-gray group-focus-within/select:text-primary transition-colors">
+                    <Clock size={16} />
+                 </div>
+                 <select 
+                    value={expiry} 
+                    onChange={(e) => setExpiry(Number(e.target.value))}
+                    className="pl-10 pr-8 py-2.5 bg-input-bg/50 border border-border-color/50 rounded-xl appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 w-full md:w-44 text-sm font-medium backdrop-blur-sm transition-all"
+                 >
+                    <option value={60}>1 Minute</option>
+                    <option value={600}>10 Minutes</option>
+                    <option value={3600}>1 Hour</option>
+                    <option value={21600}>6 Hours</option>
+                    <option value={43200}>12 Hours</option>
+                    <option value={86400}>1 Day</option>
+                    <option value={172800}>2 Days</option>
+                    <option value={604800}>1 Week</option>
+                    <option value={1209600}>2 Weeks</option>
+                    <option value={2592000}>1 Month</option>
+                 </select>
+                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-subtle-gray">
+                    <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
+                 </div>
+              </div>
+
+              {/* Password Input */}
+              <div className="relative group/password flex-1 md:flex-none">
+                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-subtle-gray group-focus-within/password:text-primary transition-colors">
+                    <Lock size={16} />
+                 </div>
+                 <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password (Optional)"
+                    className="pl-10 pr-4 py-2.5 bg-input-bg/50 border border-border-color/50 rounded-xl w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm font-medium backdrop-blur-sm transition-all"
+                 />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="relative group/btn flex items-center justify-center gap-2 overflow-hidden px-8 py-2.5 rounded-xl font-bold transition-all disabled:opacity-50 w-full md:w-auto"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary-variant transition-all group-hover/btn:scale-110"></div>
+              <span className="relative text-white flex items-center gap-2">
+                {loading ? 'Processing...' : <>Create Klister <Send size={18} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" /></>}
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

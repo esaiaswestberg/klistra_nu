@@ -63,9 +63,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="relative flex flex-col items-center min-h-screen p-4 bg-gradient-to-br from-background via-gradient-mid to-background font-mono text-on-background overflow-x-hidden">
       {/* Background Glows */}
       <div className="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
-        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[120px]"></div>
-        <div className="absolute top-[30%] -right-[10%] w-[40%] h-[40%] bg-secondary/10 rounded-full blur-[100px]"></div>
-        <div className="absolute -bottom-[10%] left-[20%] w-[50%] h-[50%] bg-primary-variant/20 rounded-full blur-[110px]"></div>
+        <div className="absolute -top-[10%] -left-[10%] w-[60%] h-[60%] bg-primary/20 rounded-full blur-[120px] animate-pulse-slow"></div>
+        <div className="absolute top-[20%] -right-[10%] w-[50%] h-[50%] bg-secondary/15 rounded-full blur-[100px] animate-pulse-slow [animation-delay:2s]"></div>
+        <div className="absolute -bottom-[10%] left-[10%] w-[60%] h-[60%] bg-accent/15 rounded-full blur-[110px] animate-pulse-slow [animation-delay:4s]"></div>
+        <div className="absolute top-[40%] left-[30%] w-[30%] h-[30%] bg-primary-variant/10 rounded-full blur-[80px] animate-pulse-slow [animation-delay:1s]"></div>
       </div>
 
       {/* Noise Overlay for Color Banding Fix */}
@@ -78,10 +79,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <div className="w-full max-w-[900px] mt-6 flex flex-col gap-6">
         {/* Header */}
-        <header className="flex justify-between items-center bg-surface/50 backdrop-blur-md p-4 rounded-xl border border-border-color shadow-lg z-50">
-           <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.href = '/'}>
-              <img src="/favicon.svg" alt="Logo" className="w-6 h-6 rounded-md" />
-              <h1 className="text-xl font-bold tracking-tighter">Klistra.nu</h1>
+        <header className="flex justify-between items-center bg-surface/40 backdrop-blur-xl p-4 rounded-2xl border border-white/5 shadow-2xl z-50">
+           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => window.location.href = '/'}>
+              <img src="/favicon.svg" alt="Logo" className="w-8 h-8 rounded-lg" />
+              <h1 className="text-2xl font-black tracking-tighter bg-gradient-to-r from-primary to-primary-variant bg-clip-text text-transparent">
+                Klistra.nu
+              </h1>
            </div>
            
            <div className="relative" ref={dropdownRef}>
@@ -118,12 +121,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         {children}
 
         {/* Footer */}
-        <footer className="text-center text-sm text-subtle-gray py-4">
-           <p>&copy; {new Date().getFullYear()} Klistra.nu. Secure & Encrypted.</p>
-           <div className="flex justify-center gap-4 mt-2">
-             <a href="/privacy" className="hover:text-primary transition-colors">Privacy</a>
-             <a href="/api" className="hover:text-primary transition-colors">API</a>
-             <a href="https://github.com/esaiaswestberg/klistra_nu" target="_blank" className="hover:text-primary transition-colors">GitHub</a>
+        <footer className="text-center text-xs font-bold tracking-widest uppercase text-subtle-gray/60 py-8 flex flex-col gap-4">
+           <p className="hover:text-subtle-gray transition-colors cursor-default">&copy; {new Date().getFullYear()} Klistra.nu. End-to-End Encrypted & Open Source.</p>
+           <div className="flex justify-center gap-6">
+             <a href="/privacy" className="hover:text-primary transition-all hover:scale-110">Privacy</a>
+             <a href="/api" className="hover:text-accent transition-all hover:scale-110">API</a>
+             <a href="https://github.com/esaiaswestberg/klistra_nu" target="_blank" className="hover:text-secondary transition-all hover:scale-110">GitHub</a>
            </div>
         </footer>
       </div>

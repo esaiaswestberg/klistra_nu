@@ -189,33 +189,42 @@ export default function ViewPaste({ id }: { id: string }) {
 
   if (isProtected && !decryptedText) {
      return (
-        <div className="bg-surface/80 backdrop-blur-md rounded-xl p-8 border border-border-color shadow-xl max-w-md mx-auto">
-           <div className="flex flex-col items-center gap-6 text-center">
-              <div className="p-4 bg-surface-variant rounded-full">
-                 <Lock size={48} className="text-warning" />
+        <div className="relative max-w-md mx-auto w-full group">
+           <div className="absolute -inset-[1px] bg-gradient-to-r from-warning/30 via-primary/30 to-warning/30 rounded-2xl blur-[1px] transition-all duration-500"></div>
+           <div className="relative bg-surface/80 backdrop-blur-xl rounded-2xl p-8 border border-white/5 shadow-2xl overflow-hidden">
+              <div className="flex flex-col items-center gap-6 text-center">
+                 <div className="relative">
+                    <div className="absolute inset-0 bg-warning/20 blur-xl rounded-full animate-pulse"></div>
+                    <div className="relative p-5 bg-warning/10 rounded-full border border-warning/20 text-warning">
+                       <Lock size={48} />
+                    </div>
+                 </div>
+                 <div>
+                    <h2 className="text-2xl font-black tracking-tight mb-2">Password Protected</h2>
+                    <p className="text-subtle-gray text-sm font-medium">This Klister is encrypted. Enter the secret password to decrypt and view the content.</p>
+                 </div>
+                 
+                 <form onSubmit={handleUnlock} className="w-full space-y-4">
+                    <input
+                       type="password"
+                       value={password}
+                       onChange={(e) => setPassword(e.target.value)}
+                       placeholder="Enter password"
+                       className="w-full px-5 py-3 bg-input-bg/50 border border-border-color/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-warning/50 text-center font-bold tracking-widest backdrop-blur-sm transition-all"
+                       autoFocus
+                    />
+                    <button 
+                       type="submit"
+                       disabled={loading}
+                       className="relative group/btn w-full flex items-center justify-center gap-2 overflow-hidden px-6 py-3 rounded-xl font-bold transition-all disabled:opacity-50 shadow-lg shadow-warning/10"
+                    >
+                       <div className="absolute inset-0 bg-gradient-to-r from-warning to-primary transition-all group-hover/btn:scale-105"></div>
+                       <span className="relative text-white flex items-center gap-2">
+                          {loading ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div> : <>Unlock Klister <Unlock size={18} className="group-hover/btn:rotate-12 transition-transform" /></>}
+                       </span>
+                    </button>
+                 </form>
               </div>
-              <div>
-                 <h2 className="text-xl font-bold mb-2">Password Protected</h2>
-                 <p className="text-subtle-gray">This paste is encrypted. Enter the password to view it.</p>
-              </div>
-              
-              <form onSubmit={handleUnlock} className="w-full space-y-4">
-                 <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter password"
-                    className="w-full px-4 py-2 bg-input-bg border border-border-color rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-center"
-                    autoFocus
-                 />
-                 <button 
-                    type="submit"
-                    disabled={loading}
-                    className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-variant text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                 >
-                    {loading ? <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div> : <>Unlock <Unlock size={18} /></>}
-                 </button>
-              </form>
            </div>
         </div>
      );
@@ -234,73 +243,97 @@ export default function ViewPaste({ id }: { id: string }) {
   }
 
   return (
-    <div className="bg-surface/80 backdrop-blur-md rounded-xl p-6 border border-border-color shadow-xl flex flex-col gap-4">
-       <div className="flex justify-between items-center border-b border-border-color pb-4">
-          <div className="flex items-center gap-2 text-primary">
-             <FileText size={20} />
-             <span className="font-bold">Klister ID: {id}</span>
-          </div>
-          <div className="flex items-center gap-4 text-sm text-subtle-gray">
-             {paste?.protected && <span className="flex items-center gap-1 text-warning"><Lock size={14} /> Protected</span>}
-             <span className="flex items-center gap-1"><Clock size={14} /> {timeLeft}</span>
-          </div>
-       </div>
+    <div className="relative group">
+      {/* Decorative Gradient Border */}
+      <div className="absolute -inset-[1px] bg-gradient-to-r from-primary/20 to-primary-variant/20 rounded-2xl blur-[1px] transition-all duration-500"></div>
 
-       {decryptedText && (
-         <div className="relative">
-            <textarea
-               readOnly
-               value={decryptedText}
-               className="w-full h-96 bg-input-bg border border-border-color rounded-lg p-4 text-on-surface focus:outline-none resize-none font-mono"
-            />
-            <button 
-               onClick={copyToClipboard}
-               className="absolute top-4 right-4 p-2 bg-surface hover:bg-surface-variant rounded-md border border-border-color transition-colors"
-               title="Copy to Clipboard"
-            >
-               <Copy size={18} />
-            </button>
-         </div>
-       )}
-
-       {paste?.files && paste.files.length > 0 && (
-         <div className="flex flex-col gap-2 mt-2">
-           <h3 className="text-sm font-bold text-subtle-gray flex items-center gap-2 uppercase tracking-wider">
-             <Paperclip size={14} /> Associated Files
-           </h3>
-           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-             {paste.files.map((file, idx) => (
-               <button 
-                 key={idx} 
-                 onClick={() => handleDownload(file, idx)}
-                 disabled={downloading[idx] || !encryptionKey}
-                 className="flex items-center justify-between bg-surface-variant/30 hover:bg-surface-variant/50 p-3 rounded-lg border border-border-color transition-all group w-full disabled:opacity-50"
-               >
-                 <div className="flex items-center gap-3 truncate">
-                   <div className="p-2 bg-primary/10 rounded group-hover:bg-primary/20 transition-colors">
-                     {downloading[idx] ? (
-                       <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
-                     ) : (
-                       <Download size={16} className="text-primary" />
-                     )}
-                   </div>
-                   <div className="flex flex-col truncate text-left">
-                     <span className="truncate text-sm font-medium">{file.name}</span>
-                     <span className="text-[10px] text-subtle-gray">{formatFileSize(file.size)}</span>
-                   </div>
-                 </div>
-                 <span className="text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                   Decrypt & Save
-                 </span>
-               </button>
-             ))}
+      <div className="relative bg-surface/80 backdrop-blur-xl rounded-2xl p-6 border border-white/5 shadow-2xl flex flex-col gap-5">
+        <div className="flex justify-between items-center border-b border-border-color/30 pb-4">
+           <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <FileText size={20} className="text-primary" />
+              </div>
+              <span className="font-bold tracking-tight">Klister ID: <span className="text-primary">{id}</span></span>
            </div>
-         </div>
-       )}
-       
-       <button onClick={() => window.location.href = '/'} className="self-start text-primary hover:underline text-sm mt-4">
-          &larr; Create New
-       </button>
+           <div className="flex items-center gap-4 text-xs font-bold tracking-widest uppercase">
+              {paste?.protected && (
+                <span className="flex items-center gap-1.5 text-warning bg-warning/10 px-2 py-1 rounded-md">
+                  <Lock size={12} /> Protected
+                </span>
+              )}
+              <span className="flex items-center gap-1.5 text-subtle-gray bg-surface-variant/50 px-2 py-1 rounded-md">
+                <Clock size={12} /> {timeLeft}
+              </span>
+           </div>
+        </div>
+
+        {decryptedText && (
+          <div className="relative group/textarea">
+             <textarea
+                readOnly
+                value={decryptedText}
+                className="w-full h-96 bg-input-bg/50 border border-border-color/50 rounded-xl p-5 text-on-surface focus:outline-none resize-none font-mono backdrop-blur-sm transition-all"
+             />
+             <div className="absolute top-4 right-4 flex gap-2">
+               <button 
+                  onClick={copyToClipboard}
+                  className="p-2.5 bg-surface/80 backdrop-blur-md hover:bg-primary hover:text-white rounded-xl border border-border-color/50 transition-all shadow-lg group/copy"
+                  title="Copy to Clipboard"
+               >
+                  <Copy size={18} className="group-active/copy:scale-90 transition-transform" />
+               </button>
+             </div>
+          </div>
+        )}
+
+        {paste?.files && paste.files.length > 0 && (
+          <div className="flex flex-col gap-3 mt-2">
+            <h3 className="text-[10px] font-black text-subtle-gray flex items-center gap-2 uppercase tracking-widest px-1">
+              <Paperclip size={12} className="text-primary" /> Associated Files
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {paste.files.map((file, idx) => (
+                <button 
+                  key={idx} 
+                  onClick={() => handleDownload(file, idx)}
+                  disabled={downloading[idx] || !encryptionKey}
+                  className="flex items-center justify-between bg-surface-variant/30 hover:bg-primary/5 p-3.5 rounded-xl border border-border-color/30 transition-all group w-full disabled:opacity-50 backdrop-blur-md hover:border-primary/30"
+                >
+                  <div className="flex items-center gap-3 truncate">
+                    <div className="p-2.5 bg-primary/10 rounded-lg group-hover:bg-primary group-hover:text-white transition-all">
+                      {downloading[idx] ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></div>
+                      ) : (
+                        <Download size={16} />
+                      )}
+                    </div>
+                    <div className="flex flex-col truncate text-left">
+                      <span className="truncate text-sm font-semibold">{file.name}</span>
+                      <span className="text-[10px] font-medium text-subtle-gray">{formatFileSize(file.size)}</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-primary opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0 pr-2">
+                    Decrypt & Save
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        <div className="flex justify-between items-center mt-2 pt-2 border-t border-border-color/30">
+          <button 
+            onClick={() => window.location.href = '/'} 
+            className="flex items-center gap-2 text-subtle-gray hover:text-primary text-sm font-bold transition-colors group/back"
+          >
+            <span className="group-hover/back:-translate-x-1 transition-transform">&larr;</span> Create New Klister
+          </button>
+          
+          <div className="text-[10px] font-bold text-subtle-gray/50 uppercase tracking-widest">
+            End-to-End Encrypted
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
