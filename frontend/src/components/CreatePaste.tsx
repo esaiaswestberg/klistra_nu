@@ -174,8 +174,9 @@ export default function CreatePaste() {
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
+              disabled={loading}
               placeholder="Paste your text here..."
-              className="w-full h-80 bg-input-bg/50 border border-border-color/50 rounded-xl p-5 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-y font-mono backdrop-blur-sm"
+              className="w-full h-80 bg-input-bg/50 border border-border-color/50 rounded-xl p-5 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all resize-y font-mono backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <div className="absolute bottom-4 right-4 text-[10px] font-bold tracking-widest uppercase text-subtle-gray bg-surface/80 backdrop-blur-md px-2 py-1 rounded-md border border-border-color/50">
               {text.length} characters
@@ -185,12 +186,13 @@ export default function CreatePaste() {
           {/* File Upload Section */}
           <div 
             className={`relative border-2 border-dashed rounded-xl p-6 transition-all duration-300 ${
-              isDragging ? 'border-primary bg-primary/10 scale-[1.01]' : 'border-border-color/50 bg-input-bg/30 hover:border-primary/30 hover:bg-primary/5'
-            }`}
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+              isDragging && !loading ? 'border-primary bg-primary/10 scale-[1.01]' : 'border-border-color/50 bg-input-bg/30 hover:border-primary/30 hover:bg-primary/5'
+            } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onDragOver={(e) => { e.preventDefault(); if (!loading) setIsDragging(true); }}
             onDragLeave={() => setIsDragging(false)}
             onDrop={(e) => {
               e.preventDefault();
+              if (loading) return;
               setIsDragging(false);
               if (e.dataTransfer.files) {
                 const filesArray = Array.from(e.dataTransfer.files);
@@ -205,12 +207,14 @@ export default function CreatePaste() {
                 onChange={handleFileChange}
                 className="hidden"
                 ref={fileInputRef}
+                disabled={loading}
               />
               {selectedFiles.length === 0 ? (
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex flex-col items-center gap-2 text-subtle-gray hover:text-primary transition-all group/upload py-2"
+                  disabled={loading}
+                  className="flex flex-col items-center gap-2 text-subtle-gray hover:text-primary transition-all group/upload py-2 disabled:cursor-not-allowed"
                 >
                   <div className="p-3 bg-surface-variant/50 rounded-full group-hover/upload:bg-primary/10 group-hover/upload:scale-110 transition-all">
                     <Paperclip size={24} className="group-hover/upload:text-primary transition-colors" />
@@ -224,7 +228,8 @@ export default function CreatePaste() {
                     <button 
                       type="button" 
                       onClick={() => fileInputRef.current?.click()}
-                      className="text-primary hover:text-primary-variant transition-colors"
+                      disabled={loading}
+                      className="text-primary hover:text-primary-variant transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       + Add More
                     </button>
@@ -277,7 +282,8 @@ export default function CreatePaste() {
                  <select 
                     value={expiry} 
                     onChange={(e) => setExpiry(Number(e.target.value))}
-                    className="pl-10 pr-8 py-2.5 bg-input-bg/50 border border-border-color/50 rounded-xl appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 w-full lg:w-40 text-sm font-medium backdrop-blur-sm transition-all"
+                    disabled={loading}
+                    className="pl-10 pr-8 py-2.5 bg-input-bg/50 border border-border-color/50 rounded-xl appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 w-full lg:w-40 text-sm font-medium backdrop-blur-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                  >
                     <option value={60}>1 Minute</option>
                     <option value={600}>10 Minutes</option>
@@ -303,7 +309,8 @@ export default function CreatePaste() {
                  <select 
                     value={language} 
                     onChange={(e) => setLanguage(e.target.value)}
-                    className="pl-10 pr-8 py-2.5 bg-input-bg/50 border border-border-color/50 rounded-xl appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 w-full lg:w-44 text-sm font-medium backdrop-blur-sm transition-all"
+                    disabled={loading}
+                    className="pl-10 pr-8 py-2.5 bg-input-bg/50 border border-border-color/50 rounded-xl appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 w-full lg:w-44 text-sm font-medium backdrop-blur-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                  >
                     {LANGUAGES.map(lang => (
                       <option key={lang.value} value={lang.value}>{lang.label}</option>
@@ -323,8 +330,9 @@ export default function CreatePaste() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
                     placeholder="Password (Optional)"
-                    className="pl-10 pr-4 py-2.5 bg-input-bg/50 border border-border-color/50 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm font-medium backdrop-blur-sm transition-all"
+                    className="pl-10 pr-4 py-2.5 bg-input-bg/50 border border-border-color/50 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm font-medium backdrop-blur-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                  />
               </div>
             </div>
