@@ -10,7 +10,7 @@
                 <label for="expiry" class="block text-sm text-on-surface/80 mb-2 sm:mb-0">Expiration:</label>
             </div>
             <div class="grow">
-                <select name="expiry" id="expiry" class="w-full bg-input-bg text-on-surface border border-border-color rounded-lg p-4 text-base focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all">
+                <select name="expiry" id="expiry" class="w-full bg-input-bg text-on-surface border border-border-color rounded-lg p-4 text-base focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer" style="background-image: url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23e0e0e0%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E'); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1.25rem;">
                     <option value="1800">30 Minutes</option>
                     <option value="3600">1 Hour</option>
                     <option value="21600">6 Hours</option>
