@@ -1,11 +1,48 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Copy, Clock, Lock, AlertTriangle, FileText, Unlock, Download, Paperclip, Code } from 'lucide-react';
+import { Copy, Clock, Lock, AlertTriangle, FileText, Unlock, Download, Paperclip, Code, Eye } from 'lucide-react';
 import { getPaste, type Paste } from '../api';
 import { useToast } from './ui/use-toast';
 import { decryptFile, deriveKeys, decryptData, base64ToKey } from '../lib/crypto';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { dracula, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import hljs from 'highlight.js';
+import ReactMarkdown from 'react-markdown';
+
+function TimeLeft({ timeoutUnix }: { timeoutUnix: number }) {
+  const [timeLeft, setTimeLeft] = useState('');
+
+  const formatTime = (seconds: number) => {
+    const days = Math.floor(seconds / (24 * 60 * 60));
+    const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60));
+    const minutes = Math.floor((seconds % (60 * 60)) / 60);
+    const s = seconds % 60;
+    
+    let res = '';
+    if (days > 0) res += `${days}d `;
+    if (hours > 0) res += `${hours}h `;
+    if (minutes > 0) res += `${minutes}m `;
+    if (s > 0) res += `${s}s`;
+    return res.trim();
+  };
+
+  useEffect(() => {
+    const update = () => {
+      const diff = timeoutUnix - Math.floor(Date.now() / 1000);
+      if (diff <= 0) {
+        setTimeLeft('Expired');
+        window.location.reload();
+      } else {
+        setTimeLeft(formatTime(diff));
+      }
+    };
+
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, [timeoutUnix]);
+
+  return <span className="flex items-center gap-1.5"><Clock size={12} /> {timeLeft}</span>;
+}
 
 export default function ViewPaste({ id }: { id: string }) {
   const [paste, setPaste] = useState<Paste | null>(null);
@@ -15,53 +52,54 @@ export default function ViewPaste({ id }: { id: string }) {
   const [error, setError] = useState('');
   const [isProtected, setIsProtected] = useState(false);
   const [password, setPassword] = useState('');
-  const [timeLeft, setTimeLeft] = useState('');
   const [downloading, setDownloading] = useState<Record<number, boolean>>({});
-  const [isHighlighted, setIsHighlighted] = useState(true);
+  const [renderMode, setRenderMode] = useState<'auto' | 'raw'>('auto');
+  const [theme, setTheme] = useState(() => document.documentElement.classList.contains('light') ? 'light' : 'dark');
   const { toast } = useToast();
 
-  const detectedLanguage = useMemo(() => {
-    if (!decryptedText) return 'text';
+  const { detectedLanguage, isMarkdown } = useMemo(() => {
+    if (!decryptedText) return { detectedLanguage: 'text', isMarkdown: false };
+    
+    // Heuristics for Markdown detection
+    const hasMarkdownMarkers = 
+      /^#\s+/m.test(decryptedText) ||              // Headers
+      /^(\*|-|\+)\s+/m.test(decryptedText) ||      // Unordered lists
+      /^\d+\.\s+/m.test(decryptedText) ||          // Ordered lists
+      /\[.*\]\(.*\)/.test(decryptedText) ||        // Links
+      /(\*\*|__)(.*?)\1/.test(decryptedText) ||    // Bold
+      /(`{3,})(?:\w+)?\n([\s\S]*?)\n\1/.test(decryptedText); // Code blocks
+
     const result = hljs.highlightAuto(decryptedText);
-    // Only trust the auto-detection if it has a certain relevance
-    return result.relevance > 5 ? result.language : 'text';
+    let lang = result.relevance > 5 ? result.language : 'text';
+    
+    // If we have strong markdown markers, prioritize markdown
+    const md = lang === 'markdown' || (lang === 'text' && hasMarkdownMarkers) || hasMarkdownMarkers;
+
+    return {
+      detectedLanguage: md ? 'markdown' : lang,
+      isMarkdown: md
+    };
   }, [decryptedText]);
 
-  const isLight = document.documentElement.classList.contains('light');
+  const isLight = theme === 'light';
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const isCurrentlyLight = document.documentElement.classList.contains('light');
+      setTheme(isCurrentlyLight ? 'light' : 'dark');
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     fetchPaste();
   }, [id]);
-
-  useEffect(() => {
-     if (paste?.timeoutUnix) {
-        const timer = setInterval(() => {
-           const diff = (paste.timeoutUnix as number) - Math.floor(Date.now() / 1000);
-           if (diff <= 0) {
-              setTimeLeft('Expired');
-              clearInterval(timer);
-              window.location.reload();
-           } else {
-              setTimeLeft(formatTime(diff));
-           }
-        }, 1000);
-        return () => clearInterval(timer);
-     }
-  }, [paste]);
-
-  const formatTime = (seconds: number) => {
-      const days = Math.floor(seconds / (24 * 60 * 60));
-      const hours = Math.floor((seconds % (24 * 60 * 60)) / (60 * 60));
-      const minutes = Math.floor((seconds % (60 * 60)) / 60);
-      const s = seconds % 60;
-      
-      let res = '';
-      if (days > 0) res += `${days}d `;
-      if (hours > 0) res += `${hours}h `;
-      if (minutes > 0) res += `${minutes}m `;
-      if (s > 0) res += `${s}s`;
-      return res.trim();
-  };
 
   const handleUnlock = async (e: React.FormEvent) => {
      e.preventDefault();
@@ -274,23 +312,75 @@ export default function ViewPaste({ id }: { id: string }) {
                   <Lock size={12} /> Protected
                 </span>
               )}
-              <span className="flex items-center gap-1.5 text-subtle-gray bg-surface-variant/50 px-2 py-1 rounded-md">
-                <Clock size={12} /> {timeLeft}
-              </span>
+              {paste?.timeoutUnix && (
+                <span className="text-subtle-gray bg-surface-variant/50 px-2 py-1 rounded-md">
+                  <TimeLeft timeoutUnix={paste.timeoutUnix} />
+                </span>
+              )}
            </div>
         </div>
 
         {decryptedText && (
           <div className="relative group/textarea min-h-96">
-             {isHighlighted && detectedLanguage !== 'text' ? (
-                <div className="w-full h-96 min-h-[24rem] bg-input-bg/50 border border-border-color/50 rounded-xl overflow-auto backdrop-blur-sm resize-y">
+             {renderMode === 'auto' && isMarkdown ? (
+                <div className="w-full bg-input-bg/50 border border-border-color/50 rounded-xl backdrop-blur-sm p-8">
+                   <div className={`prose prose-sm max-w-none ${isLight ? 'prose-slate' : 'prose-invert prose-pink'} 
+                     prose-headings:tracking-tight prose-a:text-primary hover:prose-a:text-primary-variant transition-colors
+                     prose-code:bg-surface-variant prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none
+                     prose-pre:bg-transparent prose-pre:p-0 prose-pre:border-none`}>
+                      <ReactMarkdown
+                        components={{
+                          code({ node, inline, className, children, ...props }: any) {
+                            const match = /language-(\w+)/.exec(className || '');
+                            return !inline && match ? (
+                              <SyntaxHighlighter
+                                style={isLight ? oneLight : dracula}
+                                language={match[1]}
+                                PreTag="div"
+                                showLineNumbers={true}
+                                lineNumberStyle={{
+                                  minWidth: '2.5em',
+                                  paddingRight: '1.25em',
+                                  color: '#6e6e73',
+                                  textAlign: 'right',
+                                  userSelect: 'none',
+                                  opacity: 0.5,
+                                  borderRight: '1px solid rgba(128, 128, 128, 0.1)',
+                                  marginRight: '1.25em',
+                                }}
+                                customStyle={{
+                                  margin: '1.5em 0',
+                                  padding: '1.25rem',
+                                  borderRadius: '0.75rem',
+                                  background: isLight ? '#f9fafb' : '#282a36',
+                                  fontSize: '0.875rem',
+                                  lineHeight: '1.5',
+                                  border: '1px solid rgba(128, 128, 128, 0.1)',
+                                }}
+                                {...props}
+                              >
+                                {String(children).replace(/\n$/, '')}
+                              </SyntaxHighlighter>
+                            ) : (
+                              <code className={className} {...props}>
+                                {children}
+                              </code>
+                            );
+                          }
+                        }}
+                      >
+                        {decryptedText}
+                      </ReactMarkdown>
+                   </div>
+                </div>
+             ) : renderMode === 'auto' && detectedLanguage !== 'text' ? (
+                <div className="w-full bg-input-bg/50 border border-border-color/50 rounded-xl backdrop-blur-sm overflow-hidden">
                   <SyntaxHighlighter
                     language={detectedLanguage || 'text'}
                     style={isLight ? oneLight : dracula}
                     customStyle={{
                       margin: 0,
                       padding: '1.25rem',
-                      minHeight: '100%',
                       background: 'transparent',
                       fontSize: '0.875rem',
                       lineHeight: '1.5',
@@ -311,23 +401,21 @@ export default function ViewPaste({ id }: { id: string }) {
                   </SyntaxHighlighter>
                 </div>
              ) : (
-                <textarea
-                   readOnly
-                   value={decryptedText}
-                   className="w-full h-96 min-h-[24rem] bg-input-bg/50 border border-border-color/50 rounded-xl p-5 text-on-surface focus:outline-none resize-y font-mono backdrop-blur-sm"
-                />
+                <pre className="w-full bg-input-bg/50 border border-border-color/50 rounded-xl p-5 text-on-surface font-mono backdrop-blur-sm whitespace-pre-wrap break-words text-sm leading-relaxed">
+                   {decryptedText}
+                </pre>
              )}
              
              <div className="absolute top-4 right-4 flex gap-2">
-               {detectedLanguage !== 'text' && (
+               {(detectedLanguage !== 'text') && (
                  <button
-                    onClick={() => setIsHighlighted(!isHighlighted)}
+                    onClick={() => setRenderMode(renderMode === 'auto' ? 'raw' : 'auto')}
                     className={`p-2.5 backdrop-blur-md rounded-xl border border-border-color/50 transition-all shadow-lg group/toggle ${
-                      isHighlighted ? 'bg-primary text-white border-primary/50' : 'bg-surface/80 hover:bg-surface-variant'
+                      renderMode === 'auto' ? 'bg-primary text-white border-primary/50' : 'bg-surface/80 hover:bg-surface-variant'
                     }`}
-                    title={isHighlighted ? "Show Raw Text" : "Show Highlighted Code"}
+                    title={renderMode === 'auto' ? "Show Raw Text" : isMarkdown ? "Render Markdown" : "Show Highlighted Code"}
                  >
-                    <Code size={18} />
+                    {isMarkdown && renderMode === 'auto' ? <Code size={18} /> : isMarkdown ? <Eye size={18} /> : <Code size={18} />}
                  </button>
                )}
                <button 
@@ -339,9 +427,9 @@ export default function ViewPaste({ id }: { id: string }) {
                </button>
              </div>
 
-             {isHighlighted && detectedLanguage !== 'text' && (
+             {renderMode === 'auto' && detectedLanguage !== 'text' && (
                <div className="absolute bottom-4 right-6 text-[10px] font-black uppercase tracking-widest text-subtle-gray bg-surface/80 backdrop-blur-md px-2 py-1 rounded border border-border-color/50 pointer-events-none">
-                 {detectedLanguage}
+                 {isMarkdown ? 'Markdown' : detectedLanguage}
                </div>
              )}
           </div>
