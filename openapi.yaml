@@ -1,0 +1,138 @@
+openapi: 3.0.3
+info:
+  title: Klistra.nu API
+  version: 1.0.0
+  description: Secure pastebin API
+servers:
+  - url: /api
+paths:
+  /submit:
+    post:
+      summary: Create a new paste
+      operationId: createPaste
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePasteRequest'
+      responses:
+        '201':
+          description: Paste created successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "ape12"
+        '400':
+          description: Invalid input
+        '500':
+          description: Server error
+
+  /read:
+    post:
+      summary: Read a paste
+      operationId: getPaste
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetPasteRequest'
+      responses:
+        '200':
+          description: Paste content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Paste'
+        '404':
+          description: Paste not found
+        '401':
+          description: Unauthorized (Password required or incorrect)
+
+  /status:
+    post:
+      summary: Get paste status (check if protected)
+      operationId: getPasteStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+              required:
+                - id
+      responses:
+        '200':
+          description: Paste status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  protected:
+                    type: boolean
+        '404':
+          description: Paste not found
+
+  /session:
+    get:
+      summary: Get last created paste ID from session
+      operationId: getSession
+      responses:
+        '200':
+          description: Last created paste ID
+          content:
+            text/plain:
+              schema:
+                type: string
+
+components:
+  schemas:
+    CreatePasteRequest:
+      type: object
+      required:
+        - expiry
+        - passProtect
+        - pasteText
+      properties:
+        expiry:
+          type: integer
+          minimum: 60
+          maximum: 604800
+        passProtect:
+          type: boolean
+        pass:
+          type: string
+        pasteText:
+          type: string
+
+    GetPasteRequest:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          minLength: 4
+        pass:
+          type: string
+
+    Paste:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        protected:
+          type: boolean
+        timeoutUnix:
+          type: integer
+          format: int64

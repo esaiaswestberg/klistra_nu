@@ -17,7 +17,8 @@ export default function ViewPaste({ id }: { id: string }) {
   useEffect(() => {
      if (paste?.timeoutUnix) {
         const timer = setInterval(() => {
-           const diff = paste.timeoutUnix - Math.floor(Date.now() / 1000);
+           // We know timeoutUnix is defined here because of the check
+           const diff = (paste.timeoutUnix as number) - Math.floor(Date.now() / 1000);
            if (diff <= 0) {
               setTimeLeft('Expired');
               clearInterval(timer);
@@ -46,7 +47,7 @@ export default function ViewPaste({ id }: { id: string }) {
 
   const checkStatus = async () => {
     try {
-      const status = await apiPost('status', { id });
+      const status = await apiPost<{id: string, protected: boolean}>('status', { id });
       if (status && status.id) {
          if (status.protected) {
             setIsProtected(true);
@@ -85,7 +86,7 @@ export default function ViewPaste({ id }: { id: string }) {
   const fetchPaste = async (pass: string = '') => {
      setLoading(true);
      try {
-        const data = await apiPost('read', { id, pass });
+        const data = await apiPost<Paste>('read', { id, pass });
         if (data && data.text) {
            setPaste(data);
            setIsProtected(false);

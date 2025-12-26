@@ -6,8 +6,8 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/esaiaswestberg/klistra-go/api"
 	"github.com/esaiaswestberg/klistra-go/handlers"
-	"github.com/esaiaswestberg/klistra-go/middleware"
 	"github.com/esaiaswestberg/klistra-go/services"
 )
 
@@ -57,27 +57,9 @@ func main() {
 	})
 
 	// API Routes
-	api := r.Group("/api")
-	{
-		api.GET("/token", handlers.GetToken)
-		
-		// Protected Routes (Transport Encryption)
-		protected := api.Group("/")
-		protected.Use(middleware.TransportEncryption())
-		{
-			protected.POST("/submit", handlers.CreatePaste)
-			protected.POST("/read.php", handlers.GetPaste) // Maintain legacy path or change? user wants "re-implement", so maybe clean up paths?
-			// But frontend script.js uses "api/read.php". If we rewrite frontend, we can change this.
-			// Let's use clean paths and update frontend.
-			protected.POST("/read", handlers.GetPaste)
-			
-			protected.POST("/protected.php", handlers.GetPasteStatus) // Legacy path
-			protected.POST("/status", handlers.GetPasteStatus)
-		}
-
-		api.GET("/session.php", handlers.GetSession) // Legacy path
-		api.GET("/session", handlers.GetSession)
-	}
+	server := handlers.NewServer()
+	apiGroup := r.Group("/api")
+	api.RegisterHandlers(apiGroup, server)
 
 	r.Run(":8080")
 }
