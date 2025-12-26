@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/sessions"
@@ -75,7 +76,24 @@ func main() {
 			c.JSON(404, gin.H{"error": "API endpoint not found"})
 			return
 		}
-		c.File("../frontend/dist/index.html")
+
+		// Serve index.html with optional custom head injection
+		index := "../frontend/dist/index.html"
+		customHead := os.Getenv("CUSTOM_HEAD_HTML")
+		if customHead != "" {
+			content, err := os.ReadFile(index)
+			if err == nil {
+				html := string(content)
+				// Inject before </head>
+				if strings.Contains(html, "</head>") {
+					html = strings.Replace(html, "</head>", customHead+"</head>", 1)
+					c.Header("Content-Type", "text/html; charset=utf-8")
+					c.String(200, html)
+					return
+				}
+			}
+		}
+		c.File(index)
 	})
 
 	// API Routes
