@@ -1,64 +1,92 @@
-# Low-Stack Klistra
+# Klistra.nu
 
-Low-Stack Klistra is a secure, encrypted online pastebin platform that allows you to share password-protected text with peace of mind. It is designed to keep sensitive information safe with features like automatic expiry and strong encryption.
+**Klistra.nu** is a secure, encrypted, and ephemeral pastebin platform designed to share sensitive text with peace of mind. Built with a focus on privacy and security, it ensures that your data is encrypted before it even leaves your browser (transport encryption) and stored securely with AES-256-GCM encryption.
 
-## Features
+## ✨ Features
 
-- **Secure Encryption:** Uses AES-256-GCM encryption for all pastes.
-- **Password Protection:** Optionally protect your pastes with a password.
-- **Automatic Expiry:** Set a validity period for your pastes (from 1 minute up to 1 week), after which they are automatically deleted.
-- **Privacy Focused:** Minimal data retention and reliance on ephemeral storage (Redis).
+- **🔐 Strong Encryption:** All pastes are encrypted using `AES-256-GCM`.
+- **🛡️ Password Protection:** Optional password protection for your pastes.
+- **⏳ Automatic Expiry:** Set a validity period (from 1 minute to 1 week). Pastes are automatically deleted from Redis after expiry.
+- **🌓 Dark & Light Mode:** A modern, responsive UI built with Tailwind CSS that adapts to your system preferences.
+- **⚡ High Performance:** Powered by a lightweight PHP backend and Redis for lightning-fast ephemeral storage.
+- **🕵️ Privacy First:** Minimal data retention. No database persistence beyond the specified expiry time.
 
-## Technology Stack
+## 🛠️ Technology Stack
 
-- **Backend:** PHP
-- **Database:** Redis (for high-performance, temporary data storage)
+- **Backend:** PHP 8.x
+- **Database:** Redis 7.4 (used for ephemeral key-value storage)
+- **Frontend:** HTML5, JavaScript (Vanilla), Tailwind CSS (via CDN)
 - **Containerization:** Docker & Docker Compose
-- **Frontend:** HTML, CSS, JavaScript (jQuery)
 
-## Getting Started
+## 🚀 Getting Started
+
+Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.
 
 ### Prerequisites
 
-- [Docker](https://www.docker.com/)
-- [Docker Compose](https://docs.docker.com/compose/)
+- [Docker](https://www.docker.com/get-started)
+- [Docker Compose](https://docs.docker.com/compose/install/)
 
-### Installation & Run
+### Installation
 
-1.  **Clone the repository:**
+1.  **Clone the repository**
     ```bash
-    git clone <repository-url>
+    git clone https://github.com/yourusername/klistra_nu.git
     cd klistra_nu
     ```
 
-2.  **Configure Environment Variables:**
-    Copy the example environment file and configure it.
+2.  **Configure Environment Variables**
+    Create a `.env` file from the example provided:
     ```bash
     cp .env.example .env
     ```
-    Open `.env` and update the following values:
-    -   `WEB_PORT`: The host port to expose the web server on (e.g., `8080`).
-    -   `ENCRYPTION_SALT`: **Critical.** Generate a long, random string for salt.
-    -   `REDIS_REQUIREPASS`: **Critical.** Set a strong password for Redis.
-    -   `REDIS_STORAGE_PATH`: Local path for Redis persistence.
+    
+    Open `.env` in your favorite editor and configure the following:
+    - `WEB_PORT`: The port to expose the web interface on (e.g., `8080`).
+    - `ENCRYPTION_SALT`: **Critical.** A long, random string used for salt generation.
+    - `REDIS_REQUIREPASS`: **Critical.** A strong password for your Redis instance.
+    - `REDIS_STORAGE_PATH`: The local path where Redis will persist data (e.g., `./redis/data`).
 
-3.  **Start the Application:**
+3.  **Build and Run**
+    Start the application using Docker Compose:
     ```bash
     docker-compose up -d --build
     ```
 
-4.  **Access the Application:**
-    Open your browser and navigate to `http://localhost:<WEB_PORT>` (or the port you configured).
+4.  **Access the Application**
+    Open your browser and navigate to:
+    `http://localhost:<WEB_PORT>` (e.g., `http://localhost:8080`)
 
-## Project Structure
+## 📂 Project Structure
 
--   `php/public/`: The main web application source code.
-    -   `api/`: Backend API endpoints.
-    -   `components/`: Reusable HTML/PHP UI components.
-    -   `include/`: Core logic (Encryption, ID generation, Redis connection).
--   `dockerfiles/`: Docker build files.
--   `docker-compose.yml`: Service definition and orchestration.
+```
+klistra_nu/
+├── docker-compose.yml      # Main service orchestration
+├── .env.example            # Environment variable template
+├── php/
+│   └── public/             # Web root
+│       ├── api/            # Backend API endpoints (submit, read, etc.)
+│       ├── components/     # UI components (header, footer, forms)
+│       ├── include/        # Core logic (Encryption, Redis, IDs)
+│       └── static/         # JS, CSS, and assets
+└── dockerfiles/            # Docker build configurations
+```
 
-## Security
+## 🔒 Security Architecture
 
-The application uses `AES-256-GCM` for encrypting paste content. The encryption key is derived from the user-provided password (or a default) combined with the server-side `ENCRYPTION_SALT`. Additionally, a custom transport encryption layer is implemented for submitting data.
+Klistra.nu implements a multi-layered security approach:
+
+1.  **Transport Layer:** Standard HTTPS (when deployed with a reverse proxy like Nginx/Traefik).
+2.  **Application Layer:** 
+    -   **Content Encryption:** Paste content is encrypted using `AES-256-GCM` with a key derived from the user's password (or a system-generated one) and the server-side salt.
+    -   **Transport Encryption:** A custom encryption layer creates a secure tunnel for submission data, adding an extra layer of protection during transit.
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feature/AmazingFeature`)
+5.  Open a Pull Request
