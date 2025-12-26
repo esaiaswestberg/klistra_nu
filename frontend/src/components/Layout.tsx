@@ -1,37 +1,62 @@
-import React, { useEffect, useState } from 'react';
-import { Sun, Moon } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Sun, Moon, Monitor } from 'lucide-react';
+
+type Theme = 'light' | 'dark' | 'system';
 
 export default function Layout({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    if (saved) return saved;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem('theme') as Theme;
+    return saved || 'system';
   });
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (theme === 'light') {
-      document.documentElement.classList.add('light');
-    } else {
-      document.documentElement.classList.remove('light');
-    }
-  }, [theme]);
+    const applyTheme = () => {
+      const root = document.documentElement;
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      
+      const isDark = theme === 'dark' || (theme === 'system' && systemDark);
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (!localStorage.getItem('theme')) {
-        setTheme(e.matches ? 'dark' : 'light');
+      if (isDark) {
+        root.classList.remove('light');
+      } else {
+        root.classList.add('light');
       }
     };
 
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    applyTheme();
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleSystemChange = () => {
+      if (theme === 'system') {
+        applyTheme();
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleSystemChange);
+    localStorage.setItem('theme', theme);
+
+    return () => mediaQuery.removeEventListener('change', handleSystemChange);
+  }, [theme]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
+  const getIcon = (t: Theme) => {
+    switch (t) {
+      case 'light': return <Sun size={20} />;
+      case 'dark': return <Moon size={20} />;
+      case 'system': return <Monitor size={20} />;
+    }
   };
 
   return (
@@ -45,13 +70,40 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       <div className="w-full max-w-[900px] mt-6 flex flex-col gap-6">
         {/* Header */}
-        <header className="flex justify-between items-center bg-surface/50 backdrop-blur-md p-4 rounded-xl border border-border-color shadow-lg">
+        <header className="flex justify-between items-center bg-surface/50 backdrop-blur-md p-4 rounded-xl border border-border-color shadow-lg z-50">
            <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.href = '/'}>
               <h1 className="text-xl font-bold tracking-tighter">Klistra.nu</h1>
            </div>
-           <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-surface-variant transition-colors">
-              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-           </button>
+           
+           <div className="relative" ref={dropdownRef}>
+             <button 
+               onClick={() => setIsDropdownOpen(!isDropdownOpen)} 
+               className="p-2 rounded-full hover:bg-surface-variant transition-colors flex items-center gap-2"
+               aria-label="Toggle theme"
+             >
+                {getIcon(theme)}
+             </button>
+
+             {isDropdownOpen && (
+               <div className="absolute right-0 mt-2 w-36 bg-surface border border-border-color rounded-lg shadow-xl overflow-hidden flex flex-col z-50">
+                 {(['light', 'dark', 'system'] as Theme[]).map((t) => (
+                   <button
+                     key={t}
+                     onClick={() => {
+                       setTheme(t);
+                       setIsDropdownOpen(false);
+                     }}
+                     className={`flex items-center gap-2 px-4 py-2 text-sm hover:bg-surface-variant transition-colors text-left
+                       ${theme === t ? 'text-primary' : 'text-on-surface'}
+                     `}
+                   >
+                     {getIcon(t)}
+                     <span className="capitalize">{t}</span>
+                   </button>
+                 ))}
+               </div>
+             )}
+           </div>
         </header>
 
         {children}
