@@ -1,12 +1,18 @@
+# syntax=docker/dockerfile:1
+
+# Stage 0: Get xx for cross-compilation helpers
+FROM --platform=$BUILDPLATFORM tonistiigi/xx AS xx
+
 # Stage 1: Build Frontend
-FROM oven/bun:1 AS frontend-builder
+FROM --platform=$BUILDPLATFORM oven/bun:1 AS frontend-builder
 WORKDIR /app/frontend
 
 # Copy dependency definitions
 COPY frontend/package.json frontend/bun.lock ./
 
-# Install dependencies
-RUN bun install --frozen-lockfile
+# Install dependencies with cache mount
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
 
 # Copy source code
 COPY frontend/ .
@@ -15,28 +21,36 @@ COPY frontend/ .
 RUN bun run build
 
 # Stage 2: Build Backend
-FROM golang:1.25-bookworm AS backend-builder
+FROM --platform=$BUILDPLATFORM golang:1.25-bookworm AS backend-builder
+COPY --from=xx / /
+ARG TARGETPLATFORM
 WORKDIR /app/backend
+
+# Install necessary cross-compilation toolchain for CGO
+RUN apt-get update && xx-apt-get install -y gcc libc6-dev
 
 # Copy Go module definitions
 COPY backend/go.mod backend/go.sum .
 
-# Download dependencies
-RUN go mod download
+# Download dependencies with cache mount
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
 
 # Copy backend source code
 COPY backend/ .
 
 # Build the application
-# CGO_ENABLED=1 is required for go-sqlite3
-ENV CGO_ENABLED=1
-RUN go build -o klistra-backend .
+# xx-go handles the cross-compilation environment variables (GOOS, GOARCH, CC)
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=1 xx-go build -o klistra-backend . && \
+    xx-verify klistra-backend
 
 # Stage 3: Runtime
 FROM debian:bookworm-slim
 WORKDIR /app/backend
 
-# Install necessary runtime dependencies (if any specific C libraries are needed, usually libc is enough for standard builds)
+# Install necessary runtime dependencies
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
@@ -44,9 +58,7 @@ RUN apt-get update && apt-get install -y \
 # Copy the binary from the backend builder
 COPY --from=backend-builder /app/backend/klistra-backend .
 
-# Copy the frontend build artifacts to the location expected by the Go app
-# The Go app expects "../frontend/dist" relative to its working directory (/app/backend)
-# So we place it at /app/frontend/dist
+# Copy the frontend build artifacts
 COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
 
 # Copy openapi.yaml
