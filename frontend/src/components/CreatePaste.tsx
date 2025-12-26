@@ -272,7 +272,7 @@ export default function CreatePaste() {
             </div>
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between mt-6 pt-6 border-t border-white/5">
+          <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between mt-2 pt-6 border-t border-white/5">
             <div className="flex flex-col sm:grid sm:grid-cols-2 lg:flex lg:flex-row gap-3 items-stretch lg:items-center flex-1">
               {/* Expiry Select */}
               <div className="relative group/select">
