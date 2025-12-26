@@ -6,7 +6,7 @@ import { encryptFile, generateSalt, deriveKeys, encryptData, generateRandomKey, 
 
 export default function CreatePaste() {
   const [text, setText] = useState('');
-  const [expiry, setExpiry] = useState(3600);
+  const [expiry, setExpiry] = useState(604800);
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
