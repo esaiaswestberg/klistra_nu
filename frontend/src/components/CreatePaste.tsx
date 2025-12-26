@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Lock, Clock, Send, Paperclip, X, File as FileIcon, Code } from 'lucide-react';
 import { createPaste, type CreatePasteRequest } from '../api';
 import { useToast } from './ui/use-toast';
@@ -14,8 +14,21 @@ export default function CreatePaste() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<Record<number, number>>({});
   const [isDragging, setIsDragging] = useState(false);
+  const isSubmitting = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!isSubmitting.current && (text.trim() || selectedFiles.length > 0)) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [text, selectedFiles]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -130,6 +143,7 @@ export default function CreatePaste() {
 
       const resp = await createPaste(req);
       if (resp && resp.id) {
+        isSubmitting.current = true;
         window.location.href = `/${resp.id}`;
       } else {
          throw new Error("Invalid response");
