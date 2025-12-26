@@ -1,6 +1,12 @@
 <?php session_start(); ?>
 <div class="bg-surface text-on-surface rounded-lg p-6 shadow-lg border border-border-color">
-    <h4 class="text-primary mb-4 mt-0 text-xl font-bold">Create New Klister</h4>
+    <div class="flex justify-between items-center mb-4">
+        <h4 class="text-primary text-xl font-bold m-0">Create New Klister</h4>
+        <button id="theme-toggle" class="text-on-surface hover:text-primary transition-colors cursor-pointer p-2 rounded-full hover:bg-on-surface/10" onclick="toggleTheme()" aria-label="Toggle Theme" title="Toggle Light/Dark Mode">
+            <i data-lucide="sun" id="icon-sun" width="24" height="24"></i>
+            <i data-lucide="moon" id="icon-moon" width="24" height="24" style="display: none;"></i>
+        </button>
+    </div>
     <form class="flex flex-col gap-4" autocomplete="off" onsubmit="createKlister(); return false;">
         
         <textarea name="text" class="w-full bg-input-bg text-on-surface border border-border-color rounded-lg p-4 text-base focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-y min-h-[300px]" placeholder="Paste your code or text here..." spellcheck="false"></textarea>

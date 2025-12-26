@@ -7,6 +7,16 @@ function loadContent(divId, loadUri) {
   xhttp.onreadystatechange = function () {
     if (this.readyState == 4 && this.status == 200) {
       document.getElementById(divId).innerHTML = this.responseText;
+      
+      // Re-initialize Lucide icons if available
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+      
+      // Update theme icon visibility if function exists
+      if (typeof updateThemeIcon === 'function') {
+        updateThemeIcon();
+      }
     }
   };
   xhttp.open("GET", loadUri, true);

@@ -31,12 +31,13 @@ include_once "./include/guid.php";
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@40,300,0,200" />
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
-    <script src="static/script.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="static/script.js?v=<?php echo time(); ?>"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style type="text/tailwindcss">
-        @theme {
+        :root {
+            /* Dark Mode (Default) */
             --color-background: #121212;
             --color-surface: #1e1e1e;
             --color-surface-variant: #2d2d2d;
@@ -54,7 +55,52 @@ include_once "./include/guid.php";
             --color-input-bg: #2c2c2c;
             --color-border-color: #333333;
             --color-subtle-gray: #4a4a4a;
+            --color-gradient-mid: #1a1a1a;
             --font-mono: "Roboto Mono", monospace;
+        }
+
+        :root.light {
+            /* Light Mode Overrides */
+            --color-background: #f3f4f6;
+            --color-surface: #ffffff;
+            --color-surface-variant: #f9fafb;
+            --color-primary: #f43f5e;
+            --color-primary-variant: #be123c;
+            --color-secondary: #0d9488;
+            --color-secondary-variant: #0f766e;
+            --color-error: #ef4444;
+            --color-success: #22c55e;
+            --color-warning: #f59e0b;
+            --color-info: #3b82f6;
+            --color-on-background: #111827;
+            --color-on-surface: #1f2937;
+            --color-on-primary: #ffffff;
+            --color-input-bg: #f9fafb;
+            --color-border-color: #e5e7eb;
+            --color-subtle-gray: #9ca3af;
+            --color-gradient-mid: #e5e7eb;
+        }
+
+        @theme {
+            --color-background: var(--color-background);
+            --color-surface: var(--color-surface);
+            --color-surface-variant: var(--color-surface-variant);
+            --color-primary: var(--color-primary);
+            --color-primary-variant: var(--color-primary-variant);
+            --color-secondary: var(--color-secondary);
+            --color-secondary-variant: var(--color-secondary-variant);
+            --color-error: var(--color-error);
+            --color-success: var(--color-success);
+            --color-warning: var(--color-warning);
+            --color-info: var(--color-info);
+            --color-on-background: var(--color-on-background);
+            --color-on-surface: var(--color-on-surface);
+            --color-on-primary: var(--color-on-primary);
+            --color-input-bg: var(--color-input-bg);
+            --color-border-color: var(--color-border-color);
+            --color-subtle-gray: var(--color-subtle-gray);
+            --color-gradient-mid: var(--color-gradient-mid);
+            --font-mono: var(--font-mono);
         }
 
         body {
@@ -79,11 +125,56 @@ include_once "./include/guid.php";
             }
         }
     </style>
+    <script>
+        // Theme Management
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.documentElement.classList.add('light');
+            } else {
+                document.documentElement.classList.remove('light');
+            }
+            updateThemeIcon();
+        }
+
+        function toggleTheme() {
+            const isLight = document.documentElement.classList.toggle('light');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            updateThemeIcon();
+        }
+
+        function updateThemeIcon() {
+            const isLight = document.documentElement.classList.contains('light');
+            const sunIcon = document.getElementById('icon-sun');
+            const moonIcon = document.getElementById('icon-moon');
+            
+            if (sunIcon && moonIcon) {
+                if (isLight) {
+                    sunIcon.style.display = 'none';
+                    moonIcon.style.display = 'block'; // Show moon in light mode (to switch to dark)
+                } else {
+                    sunIcon.style.display = 'block'; // Show sun in dark mode (to switch to light)
+                    moonIcon.style.display = 'none';
+                }
+            }
+            
+            // Re-render icons if needed (sometimes required for dynamic replacement)
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
     </script>
 </head>
 
 <body>
-    <div class="relative flex flex-col items-center min-h-screen p-4 bg-gradient-to-br from-background via-[#1a1a1a] to-background font-mono text-on-background overflow-x-hidden">
+    <div class="relative flex flex-col items-center min-h-screen p-4 bg-gradient-to-br from-background via-gradient-mid to-background font-mono text-on-background overflow-x-hidden">
         <!-- Background Glows -->
         <div class="fixed inset-0 pointer-events-none -z-10 overflow-hidden">
             <div class="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[120px]"></div>
