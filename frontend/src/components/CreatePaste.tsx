@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Lock, Clock, Send, Paperclip, X, File as FileIcon, Code } from 'lucide-react';
+import { Lock, Clock, Send, Paperclip, X, File as FileIcon, Code, Loader2 } from 'lucide-react';
 import { createPaste, type CreatePasteRequest } from '../api';
 import { useToast } from './ui/use-toast';
 import { encryptFile, generateSalt, deriveKeys, encryptData, generateRandomKey, keyToBase64 } from '../lib/crypto';
@@ -340,11 +340,21 @@ export default function CreatePaste() {
             <button
               type="submit"
               disabled={loading}
-              className="relative group/btn flex items-center justify-center gap-2 overflow-hidden px-8 py-2.5 rounded-xl font-bold transition-all disabled:opacity-50 w-full lg:w-auto mt-2 lg:mt-0"
+              className="relative group/btn flex items-center justify-center gap-2 overflow-hidden px-8 py-2.5 rounded-xl font-bold transition-all disabled:opacity-70 w-full lg:w-auto mt-2 lg:mt-0"
             >
-              <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary-variant transition-all group-hover/btn:scale-110"></div>
+              <div className={`absolute inset-0 bg-gradient-to-r from-primary to-primary-variant transition-all ${loading ? 'animate-pulse' : 'group-hover/btn:scale-110'}`}></div>
               <span className="relative text-white flex items-center gap-2">
-                {loading ? 'Processing...' : <>Create Klister <Send size={18} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" /></>}
+                {loading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    Create Klister 
+                    <Send size={18} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
+                  </>
+                )}
               </span>
             </button>
           </div>
