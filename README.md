@@ -81,6 +81,82 @@ Klistra.nu implements a multi-layered security approach:
     -   **Content Encryption:** Paste content is encrypted using `AES-256-GCM` with a key derived from the user's password (or a system-generated one) and the server-side salt.
     -   **Transport Encryption:** A custom encryption layer creates a secure tunnel for submission data, adding an extra layer of protection during transit.
 
+## 🔌 API Reference
+
+Klistra.nu exposes a RESTful API. Note that most endpoints require a custom Transport Encryption layer.
+
+### Transport Encryption
+
+To ensure data privacy even before it reaches the core encryption logic, the API uses a session-based transport encryption.
+1.  **Algorithm:** `AES-256-CBC`
+2.  **Key:** Obtained from `/api/token.php` (Session Token)
+3.  **Format:** `Base64(IV + EncryptedData)` where IV is the first 16 bytes.
+
+### Endpoints
+
+#### 1. Get Session Token
+Initializes a secure session and returns the encryption key.
+
+*   **URL:** `/api/token.php`
+*   **Method:** `GET`
+*   **Response:** `JSON`
+    ```json
+    { "key": "32_BYTE_HEX_STRING" }
+    ```
+
+#### 2. Check Protection Status
+Checks if a specific paste ID requires a password.
+
+*   **URL:** `/api/protected.php`
+*   **Method:** `POST`
+*   **Payload:** `JSON`
+    ```json
+    { "id": "PASTE_ID" }
+    ```
+*   **Response:** `JSON`
+    ```json
+    { "protected": true }
+    ```
+
+#### 3. Submit Paste
+Creates a new paste. The payload **must** be encrypted using the Transport Encryption described above.
+
+*   **URL:** `/api/submit.php`
+*   **Method:** `POST`
+*   **Encrypted Payload Structure:**
+    ```json
+    {
+      "expiry": 3600,             // Expiry in seconds (60 - 604800)
+      "passProtect": true,        // Enable password protection
+      "pass": "UserPassword",     // Password (required if passProtect is true)
+      "pasteText": "Secret Content"
+    }
+    ```
+*   **Response:** `Text/Plain` (The ID of the created paste)
+
+#### 4. Read Paste
+Retrieves a paste. The payload **must** be encrypted.
+
+*   **URL:** `/api/read.php`
+*   **Method:** `POST`
+*   **Encrypted Payload Structure:**
+    ```json
+    {
+      "id": "PASTE_ID",
+      "pass": "UserPassword"      // Required if protected
+    }
+    ```
+*   **Response:** `Text/Plain` (Base64 Encrypted JSON).
+    *   **Decrypted Response Structure:**
+        ```json
+        {
+          "id": "PASTE_ID",
+          "timeoutUnix": 1234567890,
+          "protected": true,
+          "text": "Secret Content"
+        }
+        ```
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
