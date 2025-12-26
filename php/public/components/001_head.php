@@ -10,9 +10,8 @@ session_start(); ?>
     return $protocol . "://" . $host . "/";
 } ?>
 
-<div class="head_container_master" id="head_container_master">
-<a href="/">
-    <img src="/static/favicon.png" alt="Logo">
-    <h1>Low-Stack Klistra</h1>
+<div class="text-center mb-4" id="head_container_master">
+<a href="/" class="inline-flex items-center justify-center gap-4 text-on-background hover:opacity-80 transition-opacity no-underline">
+    <h1 class="text-3xl font-bold text-primary tracking-tighter m-0">Klistra.nu</h1>
 </a>
 </div>
