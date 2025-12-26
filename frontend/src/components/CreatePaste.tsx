@@ -252,8 +252,13 @@ export default function CreatePaste() {
                   <option value={60}>1 Minute</option>
                   <option value={600}>10 Minutes</option>
                   <option value={3600}>1 Hour</option>
+                  <option value={21600}>6 Hours</option>
+                  <option value={43200}>12 Hours</option>
                   <option value={86400}>1 Day</option>
+                  <option value={172800}>2 Days</option>
                   <option value={604800}>1 Week</option>
+                  <option value={1209600}>2 Weeks</option>
+                  <option value={2592000}>1 Month</option>
                </select>
             </div>
 

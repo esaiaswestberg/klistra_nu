@@ -85,7 +85,7 @@ components:
         expiry:
           type: integer
           minimum: 60
-          maximum: 604800
+          maximum: 2592000
         passProtect:
           type: boolean
         passHash:

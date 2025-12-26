@@ -9,7 +9,7 @@
 - **🛡️ Client-Side File Encryption:** Files are encrypted in your browser using `AES-256-GCM` before upload, ensuring zero-knowledge storage.
 - **⚛️ Post-Quantum Ready:** Uses 256-bit symmetric keys and memory-hard key derivation to stay secure in the quantum era.
 - **🛡️ Password Protection:** Optional password protection for your pastes.
-- **⏳ Automatic Expiry:** Set a validity period (from 1 minute to 1 week). Pastes are automatically deleted after expiry.
+- **⏳ Automatic Expiry:** Set a validity period (from 1 minute to 1 month). Pastes are automatically deleted after expiry.
 - **🌓 Dark & Light Mode:** A modern, responsive UI built with React and Tailwind CSS.
 - **⚡ High Performance:** Powered by a Go backend and SQLite for efficient storage.
 
