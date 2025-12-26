@@ -4,18 +4,20 @@
 
 ## ✨ Features
 
-- **🔐 Strong Encryption:** All pastes are encrypted using `XChaCha20-Poly1305`.
+- **🔐 Strong Encryption:** Text pastes are encrypted using `XChaCha20-Poly1305`.
+- **📁 Multi-File Support:** Securely share multiple files alongside your text.
+- **🛡️ Client-Side File Encryption:** Files are encrypted in your browser using `AES-256-GCM` before upload, ensuring zero-knowledge storage.
+- **⚛️ Post-Quantum Ready:** Uses 256-bit symmetric keys and memory-hard key derivation to stay secure in the quantum era.
 - **🛡️ Password Protection:** Optional password protection for your pastes.
-- **⏳ Automatic Expiry:** Set a validity period (from 1 minute to 1 week). Pastes are automatically deleted from the database after expiry.
-- **🌓 Dark & Light Mode:** A modern, responsive UI built with React and Tailwind CSS that adapts to your system preferences.
-- **⚡ High Performance:** Powered by a high-performance Go backend and SQLite for efficient storage.
-- **🕵️ Privacy First:** Minimal data retention. No database persistence beyond the specified expiry time.
+- **⏳ Automatic Expiry:** Set a validity period (from 1 minute to 1 week). Pastes are automatically deleted after expiry.
+- **🌓 Dark & Light Mode:** A modern, responsive UI built with React and Tailwind CSS.
+- **⚡ High Performance:** Powered by a Go backend and SQLite for efficient storage.
 
 ## 🛠️ Technology Stack
 
 - **Backend:** Go (Golang) 1.25+ with Gin framework
-- **Database:** SQLite (used for local persistent storage)
-- **Frontend:** React, Vite, Tailwind CSS
+- **Database:** SQLite
+- **Frontend:** React, Vite, Tailwind CSS, Web Crypto API
 - **Containerization:** Docker & Docker Compose
 
 ## 🚀 Getting Started
@@ -26,109 +28,77 @@ Follow these instructions to get a copy of the project up and running on your lo
 
 - [Docker](https://www.docker.com/get-started)
 - [Docker Compose](https://docs.docker.com/compose/install/)
+- [Bun](https://bun.sh/) (for frontend development)
+- [Go](https://go.dev/) (for backend development)
 
 ### Installation
 
 1.  **Clone the repository**
     ```bash
-    git clone https://github.com/yourusername/klistra_nu.git
+    git clone https://github.com/esaiaswestberg/klistra_nu.git
     cd klistra_nu
     ```
 
-2.  **Configure Environment Variables**
+2.  **Generate API Types**
+    ```bash
+    ./generate.sh
+    ```
+
+3.  **Configure Environment Variables**
     Create a `.env` file from the example provided:
     ```bash
     cp .env.example .env
     ```
-    
-    Open `.env` in your favorite editor and configure the following:
-    - `WEB_PORT`: The port to expose the web interface on (e.g., `8080`).
 
-3.  **Build and Run**
+4.  **Build and Run**
     Start the application using Docker Compose (Development):
     ```bash
     docker-compose -f docker-compose.dev.yml up --build
     ```
 
-4.  **Access the Application**
+5.  **Access the Application**
     Open your browser and navigate to:
-    `http://localhost:<WEB_PORT>` (e.g., `http://localhost:8080`)
+    `http://localhost:8080` (or the port specified in your `.env`)
 
 ## 📂 Project Structure
 
 ```
 klistra_nu/
-├── docker-compose.yml      # Production service orchestration
-├── docker-compose.dev.yml  # Development service orchestration
-├── .env.example            # Environment variable template
+├── generate.sh             # API code generation script
+├── openapi.yaml            # API specification
 ├── backend/                # Go Backend
-│   ├── cmd/                # Entrypoints
+│   ├── api/                # Generated API types
 │   ├── handlers/           # HTTP Handlers
 │   ├── models/             # Data Models
 │   ├── services/           # Core Logic (Encryption, DB)
 │   └── main.go             # Application entry point
 ├── frontend/               # React Frontend
 │   ├── src/                # Source code
+│   │   ├── api-types.ts    # Generated TS types
+│   │   ├── lib/crypto.ts   # Client-side encryption logic
 │   └── vite.config.ts      # Vite Configuration
 └── Dockerfile              # Multi-stage Docker build
 ```
 
 ## 🔒 Security Architecture
 
-Klistra.nu implements a robust security approach:
+Klistra.nu implements a multi-layered, zero-knowledge security approach:
 
-1.  **Transport Layer:** Standard HTTPS (when deployed with a reverse proxy).
-2.  **Application Layer:** 
+1.  **Transport Layer:** Standard HTTPS.
+2.  **Application Layer (Text):** 
     -   **Content Encryption:** Paste content is encrypted using `XChaCha20-Poly1305`.
-    -   **Key Derivation:** Keys are derived using Argon2id with a unique, random salt generated for every paste.
-    -   **Zero-Knowledge (Partial):** For unprotected pastes, the ID acts as the decryption key. For protected pastes, the password is required to derive the key.
+    -   **Key Derivation:** Keys are derived using `Argon2id` with a unique, random salt generated for every paste.
+3.  **Client-Side Layer (Files):**
+    -   **File Encryption:** Files are encrypted locally in the browser using `AES-256-GCM` before being sent to the server.
+    -   **Zero-Knowledge:** The server and file storage provider never see the raw file content or the file decryption keys.
+4.  **Quantum Resistance:**
+    -   By using 256-bit symmetric keys, Klistra.nu is resistant to Grover's algorithm, maintaining 128-bit security even against future quantum computers.
 
 ## 🔌 API Reference
 
-Klistra.nu exposes a RESTful API defined by the OpenAPI specification (`openapi.yaml`).
+The Klistra.nu API is fully documented using the OpenAPI Specification. You can find the complete definition in the [openapi.yaml](./openapi.yaml) file.
 
-### Endpoints
-
-#### 1. Create Paste
-Creates a new paste.
-
-*   **URL:** `/api/pastes`
-*   **Method:** `POST`
-*   **Payload:**
-    ```json
-    {
-      "expiry": 3600,             // Expiry in seconds
-      "passProtect": true,        // Enable password protection
-      "pass": "UserPassword",     // Password (optional)
-      "pasteText": "Secret Content"
-    }
-    ```
-*   **Response:** `JSON`
-    ```json
-    {
-      "id": "PASTE_ID",
-      "protected": true,
-      "timeoutUnix": 1234567890
-    }
-    ```
-
-#### 2. Get Paste
-Retrieves a paste.
-
-*   **URL:** `/api/pastes/{id}`
-*   **Method:** `GET`
-*   **Headers:**
-    - `X-Paste-Password`: Password (if protected)
-*   **Response:** `JSON`
-    ```json
-    {
-      "id": "PASTE_ID",
-      "text": "Decrypted Content",
-      "protected": true,
-      "timeoutUnix": 1234567890
-    }
-    ```
-    *If the paste is protected and no password is provided, `text` will be null.*
+For development, you can use the `generate.sh` script to regenerate client and server types from this specification.
 
 ## 🤝 Contributing
 
