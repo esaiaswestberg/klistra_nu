@@ -253,17 +253,17 @@ export default function CreatePaste() {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-4 items-center justify-between mt-2">
-            <div className="flex flex-wrap gap-3 items-center w-full md:w-auto">
+          <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between mt-6 pt-6 border-t border-white/5">
+            <div className="flex flex-col sm:grid sm:grid-cols-2 lg:flex lg:flex-row gap-3 items-stretch lg:items-center flex-1">
               {/* Expiry Select */}
               <div className="relative group/select">
-                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-subtle-gray group-focus-within/select:text-primary transition-colors">
+                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface/70 group-focus-within/select:text-primary transition-colors">
                     <Clock size={16} />
                  </div>
                  <select 
                     value={expiry} 
                     onChange={(e) => setExpiry(Number(e.target.value))}
-                    className="pl-10 pr-8 py-2.5 bg-input-bg/50 border border-border-color/50 rounded-xl appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 w-full md:w-44 text-sm font-medium backdrop-blur-sm transition-all"
+                    className="pl-10 pr-8 py-2.5 bg-input-bg/50 border border-border-color/50 rounded-xl appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 w-full lg:w-40 text-sm font-medium backdrop-blur-sm transition-all"
                  >
                     <option value={60}>1 Minute</option>
                     <option value={600}>10 Minutes</option>
@@ -276,33 +276,33 @@ export default function CreatePaste() {
                     <option value={1209600}>2 Weeks</option>
                     <option value={2592000}>1 Month</option>
                  </select>
-                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-subtle-gray">
+                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-on-surface/70">
                     <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
                  </div>
               </div>
 
               {/* Language Select */}
               <div className="relative group/select">
-                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-subtle-gray group-focus-within/select:text-primary transition-colors">
+                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface/70 group-focus-within/select:text-primary transition-colors">
                     <Code size={16} />
                  </div>
                  <select 
                     value={language} 
                     onChange={(e) => setLanguage(e.target.value)}
-                    className="pl-10 pr-8 py-2.5 bg-input-bg/50 border border-border-color/50 rounded-xl appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 w-full md:w-44 text-sm font-medium backdrop-blur-sm transition-all"
+                    className="pl-10 pr-8 py-2.5 bg-input-bg/50 border border-border-color/50 rounded-xl appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 w-full lg:w-44 text-sm font-medium backdrop-blur-sm transition-all"
                  >
                     {LANGUAGES.map(lang => (
                       <option key={lang.value} value={lang.value}>{lang.label}</option>
                     ))}
                  </select>
-                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-subtle-gray">
+                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-on-surface/70">
                     <svg className="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
                  </div>
               </div>
 
               {/* Password Input */}
-              <div className="relative group/password flex-1 md:flex-none">
-                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-subtle-gray group-focus-within/password:text-primary transition-colors">
+              <div className="relative group/password sm:col-span-2 lg:flex-1">
+                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-on-surface/70 group-focus-within/password:text-primary transition-colors">
                     <Lock size={16} />
                  </div>
                  <input
@@ -310,7 +310,7 @@ export default function CreatePaste() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password (Optional)"
-                    className="pl-10 pr-4 py-2.5 bg-input-bg/50 border border-border-color/50 rounded-xl w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm font-medium backdrop-blur-sm transition-all"
+                    className="pl-10 pr-4 py-2.5 bg-input-bg/50 border border-border-color/50 rounded-xl w-full focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm font-medium backdrop-blur-sm transition-all"
                  />
               </div>
             </div>
@@ -318,7 +318,7 @@ export default function CreatePaste() {
             <button
               type="submit"
               disabled={loading}
-              className="relative group/btn flex items-center justify-center gap-2 overflow-hidden px-8 py-2.5 rounded-xl font-bold transition-all disabled:opacity-50 w-full md:w-auto"
+              className="relative group/btn flex items-center justify-center gap-2 overflow-hidden px-8 py-2.5 rounded-xl font-bold transition-all disabled:opacity-50 w-full lg:w-auto mt-2 lg:mt-0"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary-variant transition-all group-hover/btn:scale-110"></div>
               <span className="relative text-white flex items-center gap-2">
