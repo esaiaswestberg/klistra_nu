@@ -4,6 +4,7 @@ export const API_BASE = '/api';
 
 export type Paste = components['schemas']['Paste'];
 export type CreatePasteRequest = components['schemas']['CreatePasteRequest'];
+export type FileSchema = components['schemas']['File'];
 
 export async function createPaste(data: CreatePasteRequest): Promise<Paste> {
   const response = await fetch(`${API_BASE}/pastes`, {

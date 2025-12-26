@@ -14,20 +14,27 @@ COPY frontend/package.json frontend/bun.lock ./
 RUN --mount=type=cache,target=/root/.bun/install/cache \
     bun install --frozen-lockfile
 
-# Copy source code
+# Copy openapi.yaml and source code
+COPY openapi.yaml ../
 COPY frontend/ .
+
+# Generate frontend API types
+RUN bunx openapi-typescript ../openapi.yaml -o src/api-types.ts
 
 # Build the frontend
 RUN bun run build
 
 # Stage 2: Build Backend
 FROM --platform=$BUILDPLATFORM golang:1.25-bookworm AS backend-builder
-COPY --from=xx / /
+COPY --from=xx /
 ARG TARGETPLATFORM
 WORKDIR /app/backend
 
 # Install necessary cross-compilation toolchain for CGO
 RUN apt-get update && xx-apt-get install -y gcc libc6-dev
+
+# Install oapi-codegen
+RUN go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
 
 # Copy Go module definitions
 COPY backend/go.mod backend/go.sum .
@@ -36,11 +43,15 @@ COPY backend/go.mod backend/go.sum .
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
 
-# Copy backend source code
+# Copy openapi.yaml and backend source code
+COPY openapi.yaml ../
 COPY backend/ .
 
+# Generate backend API code
+RUN mkdir -p api && \
+    oapi-codegen -package api -generate types,gin ../openapi.yaml > api/api.gen.go
+
 # Build the application
-# xx-go handles the cross-compilation environment variables (GOOS, GOARCH, CC)
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=1 xx-go build -o klistra-backend . && \

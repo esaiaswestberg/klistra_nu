@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Copy, Clock, Lock, AlertTriangle, FileText, Unlock, Download, Paperclip, Code, Eye } from 'lucide-react';
-import { getPaste, type Paste } from '../api';
+import { getPaste, type Paste, type FileSchema } from '../api';
 import { useToast } from './ui/use-toast';
 import { decryptFile, deriveKeys, decryptData, base64ToKey } from '../lib/crypto';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -466,7 +466,7 @@ export default function ViewPaste({ id }: { id: string }) {
               <Paperclip size={12} className="text-primary" /> Associated Files
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {paste.files.map((file, idx) => (
+              {paste.files.map((file: FileSchema, idx: number) => (
                 <button 
                   key={idx} 
                   onClick={() => handleDownload(file, idx)}
