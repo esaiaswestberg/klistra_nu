@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/gin-contrib/sessions"
@@ -52,10 +53,25 @@ func main() {
 	r.StaticFile("/sitemap.xml", "../frontend/dist/sitemap.xml")
 	r.StaticFile("/robots.txt", "../frontend/dist/robots.txt")
 	
-	// SPA Fallback
+	// SPA Fallback & External Static Files
 	r.NoRoute(func(c *gin.Context) {
+		path := c.Request.URL.Path
+
+		// Check external static dir (e.g. for Google Search Console verification)
+		extDir := os.Getenv("EXTERNAL_STATIC_DIR")
+		if extDir == "" {
+			extDir = "/app/static"
+		}
+		
+		// Securely join and check if file exists in the external directory
+		target := filepath.Join(extDir, filepath.Clean(path))
+		if info, err := os.Stat(target); err == nil && !info.IsDir() {
+			c.File(target)
+			return
+		}
+
 		// If path starts with /api, return 404
-		if len(c.Request.URL.Path) >= 4 && c.Request.URL.Path[:4] == "/api" {
+		if len(path) >= 4 && path[:4] == "/api" {
 			c.JSON(404, gin.H{"error": "API endpoint not found"})
 			return
 		}
