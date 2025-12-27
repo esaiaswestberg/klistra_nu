@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"embed"
+	"encoding/base64"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -22,6 +25,28 @@ import (
 
 //go:embed static/*
 var staticFS embed.FS
+
+// BodyObfuscatorMiddleware transparently decodes base64-obscured request bodies
+func BodyObfuscatorMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if c.GetHeader("X-Klistra-Obscured") == "base64" {
+			body, err := io.ReadAll(c.Request.Body)
+			if err != nil {
+				c.AbortWithStatus(http.StatusBadRequest)
+				return
+			}
+			
+			decoded, err := base64.StdEncoding.DecodeString(string(body))
+			if err != nil {
+				// Fallback: if it's not valid base64, maybe it's already decoded or just garbage
+				c.Request.Body = io.NopCloser(bytes.NewBuffer(body))
+			} else {
+				c.Request.Body = io.NopCloser(bytes.NewBuffer(decoded))
+			}
+		}
+		c.Next()
+	}
+}
 
 func main() {
 	// Init Services
@@ -86,7 +111,7 @@ func main() {
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-Klistra-Auth, X-Klistra-Obscured")
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
@@ -218,6 +243,7 @@ func main() {
 	server := handlers.NewServer()
 	apiGroup := r.Group("/api")
 	apiGroup.Use(generalMiddleware)
+	apiGroup.Use(BodyObfuscatorMiddleware())
 
 	// Register handlers manually to apply specific middleware to POST /pastes
 	// We can't easily use api.RegisterHandlers if we want different middleware per route

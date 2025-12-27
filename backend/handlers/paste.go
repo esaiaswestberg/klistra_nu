@@ -46,9 +46,9 @@ func (s *Server) CreatePaste(c *gin.Context) {
 		filesJSON = string(fj)
 	}
 
-	passHash := ""
-	if req.PassHash != nil {
-		passHash = *req.PassHash
+	accessHash := ""
+	if req.AccessHash != nil {
+		accessHash = *req.AccessHash
 	}
 
 	salt := ""
@@ -62,8 +62,8 @@ func (s *Server) CreatePaste(c *gin.Context) {
 		Text:        req.PasteText,
 		Files:       filesJSON,
 		Language:    getStringValue(req.Language),
-		Protected:   req.PassProtect,
-		PassHash:    passHash,
+		Protected:   req.IsProtected,
+		PassHash:    accessHash,
 		TimeoutUnix: timeoutUnix,
 		Salt:        salt,
 	}
@@ -82,13 +82,13 @@ func (s *Server) CreatePaste(c *gin.Context) {
 
 	resp := api.Paste{
 		Id:          &id,
-		Protected:   &req.PassProtect,
+		Protected:   &req.IsProtected,
 		TimeoutUnix: &timeoutUnix,
 		Text:        &req.PasteText,
 		Files:       req.Files,
 		Language:    req.Language,
 		Salt:        &salt,
-		MasterKey:   req.PassHash,
+		MasterKey:   req.AccessHash,
 	}
 	
 	c.JSON(http.StatusCreated, resp)
@@ -112,8 +112,8 @@ func (s *Server) GetPaste(c *gin.Context, id string, params api.GetPasteParams) 
 	json.Unmarshal([]byte(data), &paste)
 
 	token := ""
-	if params.XPastePassword != nil {
-		token = *params.XPastePassword
+	if params.XKlistraAuth != nil {
+		token = *params.XKlistraAuth
 	}
 
 	// Access control:

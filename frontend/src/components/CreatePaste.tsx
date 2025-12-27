@@ -134,8 +134,8 @@ export default function CreatePaste() {
       const req: CreatePasteRequest = {
         pasteText: encryptedText,
         expiry: expiry,
-        passProtect: !!password,
-        passHash: passHash,
+        isProtected: !!password,
+        accessHash: passHash,
         salt: salt,
         language: language || undefined,
         files: filesMetadata

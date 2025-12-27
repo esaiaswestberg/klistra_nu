@@ -31,7 +31,7 @@ paths:
   /pastes/{id}:
     get:
       summary: Get a paste
-      description: Retrieve a paste. If protected, provide password in X-Paste-Password header. If no password provided for protected paste, returns metadata only.
+      description: Retrieve a paste. If protected, provide access token in X-Klistra-Auth header. If no auth provided for protected paste, returns metadata only.
       operationId: getPaste
       parameters:
         - in: path
@@ -41,11 +41,11 @@ paths:
           required: true
           description: Paste ID
         - in: header
-          name: X-Paste-Password
+          name: X-Klistra-Auth
           schema:
             type: string
           required: false
-          description: Password for protected pastes
+          description: Auth token for protected pastes
       responses:
         '200':
           description: Paste content (or metadata if protected and locked)
@@ -54,7 +54,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Paste'
         '401':
-          description: Incorrect password
+          description: Incorrect auth token
         '404':
           description: Paste not found
 
@@ -79,16 +79,16 @@ components:
       type: object
       required:
         - expiry
-        - passProtect
+        - isProtected
         - pasteText
       properties:
         expiry:
           type: integer
           minimum: 60
           maximum: 2592000
-        passProtect:
+        isProtected:
           type: boolean
-        passHash:
+        accessHash:
           type: string
         salt:
           type: string

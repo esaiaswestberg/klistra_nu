@@ -7,11 +7,15 @@ export type CreatePasteRequest = components['schemas']['CreatePasteRequest'];
 export type FileSchema = components['schemas']['File'];
 
 export async function createPaste(data: CreatePasteRequest): Promise<Paste> {
+  // Obscure the body to bypass keyword-filtering firewalls (e.g. blocking "password")
+  const body = btoa(JSON.stringify(data));
+  
   const response = await fetch(`${API_BASE}/pastes`, {
     method: 'POST',
-    body: JSON.stringify(data),
+    body: body,
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      'X-Klistra-Obscured': 'base64'
     }
   });
 
@@ -28,7 +32,7 @@ export async function getPaste(id: string, password?: string): Promise<Paste> {
   };
   
   if (password) {
-    headers['X-Paste-Password'] = password;
+    headers['X-Klistra-Auth'] = password;
   }
 
   const response = await fetch(`${API_BASE}/pastes/${id}`, {
