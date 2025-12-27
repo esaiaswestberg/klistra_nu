@@ -10,6 +10,8 @@
 - **⚛️ Post-Quantum Ready:** Uses 256-bit symmetric keys and memory-hard key derivation to stay secure in the quantum era.
 - **🛡️ Password Protection:** Optional password protection for your pastes.
 - **⏳ Automatic Expiry:** Set a validity period (from 1 minute to 1 month). Pastes are automatically deleted after expiry.
+- **🛡️ Rate Limiting:** Built-in protection against brute-force and DoS attacks.
+- **🔐 Secure IDs:** High-entropy, human-readable identifiers that are resistant to discovery by guessing.
 - **🌓 Dark & Light Mode:** A modern, responsive UI built with React and Tailwind CSS.
 - **⚡ High Performance:** Powered by a Go backend and SQLite for efficient storage.
 - **🛠️ Easy Customization:** Support for custom `<head>` injection and external static files (for SEO verification).
@@ -64,6 +66,12 @@ Klistra.nu implements a multi-layered security approach:
     -   By using 256-bit symmetric keys, Klistra.nu is resistant to Grover's algorithm, maintaining 128-bit security even against future quantum computers.
 5.  **Server Blindness (Protected Pastes):**
     -   For password-protected pastes, the server and storage provider never see raw text, file content, decryption keys, or your password.
+6.  **Server-Side Protection:**
+    -   **Rate Limiting:** Protects against automated brute-force attacks on paste IDs and resource exhaustion.
+    -   **High-Entropy IDs:** Uses `crypto/rand` to generate IDs with a large search space, preventing "iteration" or "crawling" attacks.
+    -   **Session Hardening:** Cookies use `HttpOnly`, `Secure`, and `SameSite: Strict` flags to prevent XSS-based hijacking and CSRF.
+    -   **Input Validation:** Strict limits on request sizes (10MB) and expiry durations are enforced at the API level.
+    -   **Path Traversal Protection:** Static file serving is jailed to specific directories with secure path resolution.
 
 ## 🔌 API Reference
 
