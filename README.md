@@ -29,6 +29,8 @@ Klistra.nu is designed to be easily deployed using Docker.
 | `CUSTOM_HEAD_HTML` | Custom HTML to inject into the `<head>` section (e.g., for analytics) | - |
 | `EXTERNAL_STATIC_DIR` | Directory to serve extra static files from (e.g., for Google verification) | `/app/static` |
 | `GIN_MODE` | Gin framework mode (`debug` or `release`) | `debug` |
+| `RATE_LIMIT_GENERAL` | Max requests per minute for general API endpoints | `60` |
+| `RATE_LIMIT_CREATE` | Max requests per minute for paste creation | `5` |
 
 #### Customization Example
 

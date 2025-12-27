@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -37,18 +38,31 @@ func main() {
 	r := gin.Default()
 
 	// Rate Limiting
-	// Define a limit: 60 requests per minute
+	// Get limits from environment variables
+	getEnvInt := func(key string, fallback int) int {
+		if val := os.Getenv(key); val != "" {
+			if i, err := strconv.Atoi(val); err == nil {
+				return i
+			}
+		}
+		return fallback
+	}
+
+	generalLimit := getEnvInt("RATE_LIMIT_GENERAL", 60)
+	createLimit := getEnvInt("RATE_LIMIT_CREATE", 5)
+
+	// Define a limit: 60 requests per minute by default
 	generalRate := limiter.Rate{
 		Period: 1 * time.Minute,
-		Limit:  60,
+		Limit:  int64(generalLimit),
 	}
 	generalStore := memory.NewStore()
 	generalMiddleware := mgin.NewMiddleware(limiter.New(generalStore, generalRate))
 
-	// Stricter limit for paste creation: 5 requests per minute
+	// Stricter limit for paste creation: 5 requests per minute by default
 	createRate := limiter.Rate{
 		Period: 1 * time.Minute,
-		Limit:  5,
+		Limit:  int64(createLimit),
 	}
 	createStore := memory.NewStore()
 	createMiddleware := mgin.NewMiddleware(limiter.New(createStore, createRate))
