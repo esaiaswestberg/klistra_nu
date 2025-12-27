@@ -59,6 +59,13 @@ func main() {
 		sessionSecret = "default-secret-change-me"
 	}
 	store := cookie.NewStore([]byte(sessionSecret))
+	store.Options(sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 30,
+		HttpOnly: true,
+		Secure:   os.Getenv("GIN_MODE") == "release",
+		SameSite: http.SameSiteStrictMode,
+	})
 	r.Use(sessions.Sessions("mysession", store))
 
 	// CORS? PHP had Allow-Origin *
